@@ -86,7 +86,7 @@ describe('Orders (e2e)', () => {
     const created = await request(app.getHttpServer())
       .post('/api/v1/orders')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ pickupAddress: 'A', pickup, deliveryAddress: 'B', delivery })
+      .send({ pickupAddress: 'Pickup point', pickup, deliveryAddress: 'Delivery point', delivery })
       .expect(201);
     const orderId = created.body.id;
 
@@ -149,7 +149,7 @@ describe('Orders (e2e)', () => {
     const created = await request(app.getHttpServer())
       .post('/api/v1/orders')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ pickupAddress: 'A', pickup, deliveryAddress: 'B', delivery })
+      .send({ pickupAddress: 'Pickup point', pickup, deliveryAddress: 'Delivery point', delivery })
       .expect(201);
 
     await request(app.getHttpServer())
