@@ -1,0 +1,11 @@
+{
+  "auth": {
+    "invalidCredentials": "Invalid email or password",
+    "accountInactive": "This account is no longer active",
+    "sessionExpired": "Your session has expired, please log in again"
+  },
+  "orders": {
+    "assigned": "You have a new delivery: order #{orderId}",
+    "delivered": "Order #{orderId} was delivered"
+  }
+}

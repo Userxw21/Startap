@@ -1,0 +1,98 @@
+{
+  "auth": {
+    "title": "Kuryer platformasi",
+    "subtitle": "Boshqaruv paneliga kirish",
+    "email": "Email",
+    "password": "Parol",
+    "submit": "Kirish",
+    "submitting": "Kirilmoqda...",
+    "invalidCredentials": "Email yoki parol noto'g'ri"
+  },
+  "nav": {
+    "overview": "Umumiy ko'rinish",
+    "couriers": "Kuryerlar",
+    "orders": "Buyurtmalar",
+    "analytics": "Statistika",
+    "logout": "Chiqish"
+  },
+  "overview": {
+    "title": "Umumiy ko'rinish",
+    "activeCouriers": "Faol kuryerlar",
+    "delivering": "Yetkazmoqda",
+    "available": "Bo'sh",
+    "offline": "Oflayn",
+    "totalOrders": "Buyurtmalar",
+    "createdOrders": "Yangi",
+    "activeOrders": "Jarayonda",
+    "deliveredOrders": "Yetkazilgan"
+  },
+  "couriers": {
+    "title": "Kuryerlar",
+    "name": "Ism",
+    "email": "Email",
+    "vehicle": "Transport",
+    "status": "Holat",
+    "empty": "Hozircha kuryerlar yo'q"
+  },
+  "orders": {
+    "title": "Buyurtmalar",
+    "pickup": "Olib ketish",
+    "delivery": "Yetkazish",
+    "status": "Holat",
+    "priority": "Muhimlik",
+    "assignedCourier": "Kuryer",
+    "unassigned": "Tayinlanmagan",
+    "empty": "Hozircha buyurtmalar yo'q",
+    "detail": "Buyurtma tafsilotlari",
+    "customer": "Mijoz",
+    "assign": "Kuryerga tayinlash",
+    "assignAction": "Tayinlash",
+    "cancel": "Bekor qilish",
+    "history": "Holat tarixi"
+  },
+  "analytics": {
+    "title": "Statistika",
+    "subtitle": "So'nggi 30 kun",
+    "totalOrders": "Buyurtmalar",
+    "delivered": "Yetkazilgan",
+    "failed": "Muvaffaqiyatsiz",
+    "cancelled": "Bekor qilingan",
+    "avgDeliveryTime": "O'rtacha yetkazish vaqti",
+    "avgDeliveryTimeHint": "Qabul qilishdan yetkazishgacha",
+    "avgDispatchTime": "O'rtacha tayinlash vaqti",
+    "avgDispatchTimeHint": "Yaratilishdan tayinlashgacha",
+    "avgDistance": "O'rtacha masofa",
+    "avgDistanceHint": "To'g'ri chiziq bo'yicha (marshrut emas)",
+    "topCouriers": "Eng faol kuryerlar",
+    "deliveries": "yetkazib berish",
+    "noData": "Bu davr uchun ma'lumot yo'q"
+  },
+  "status": {
+    "OFFLINE": "Oflayn",
+    "ONLINE": "Onlayn",
+    "AVAILABLE": "Bo'sh",
+    "DELIVERING": "Yetkazmoqda",
+    "PAUSED": "Pauza",
+    "CREATED": "Yaratildi",
+    "ASSIGNED": "Tayinlandi",
+    "ACCEPTED": "Qabul qilindi",
+    "PICKUP": "Olib ketilmoqda",
+    "PICKED_UP": "Olib ketildi",
+    "DELIVERED": "Yetkazildi",
+    "CANCELLED": "Bekor qilindi",
+    "FAILED": "Muvaffaqiyatsiz"
+  },
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "save": "Saqlash",
+    "close": "Yopish",
+    "language": "Til",
+    "connected": "Jonli",
+    "connecting": "Ulanmoqda...",
+    "disconnected": "Aloqa yo'q"
+  },
+  "courierNotice": {
+    "title": "Bu boshqaruv paneli kuryerlar uchun emas",
+    "message": "Bu ekran kompaniya administratorlari va dispetcherlar uchun mo'ljallangan. Yetkazib berishlaringizni boshqarish uchun kuryer ilovasidan foydalaning."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "auth": {
+    "invalidCredentials": "Email yoki parol noto'g'ri",
+    "accountInactive": "Bu hisob endi faol emas",
+    "sessionExpired": "Sessiya muddati tugadi, qaytadan kiring"
+  },
+  "orders": {
+    "assigned": "Sizga yangi yetkazib berish buyurtmasi: #{orderId}",
+    "delivered": "#{orderId}-buyurtma yetkazib berildi"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "auth": {
+    "title": "Courier Platform",
+    "subtitle": "Sign in to the dashboard",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in...",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "nav": {
+    "overview": "Overview",
+    "couriers": "Couriers",
+    "orders": "Orders",
+    "analytics": "Analytics",
+    "logout": "Log out"
+  },
+  "overview": {
+    "title": "Overview",
+    "activeCouriers": "Active couriers",
+    "delivering": "Delivering",
+    "available": "Available",
+    "offline": "Offline",
+    "totalOrders": "Orders",
+    "createdOrders": "New",
+    "activeOrders": "In progress",
+    "deliveredOrders": "Delivered"
+  },
+  "couriers": {
+    "title": "Couriers",
+    "name": "Name",
+    "email": "Email",
+    "vehicle": "Vehicle",
+    "status": "Status",
+    "empty": "No couriers yet"
+  },
+  "orders": {
+    "title": "Orders",
+    "pickup": "Pickup",
+    "delivery": "Delivery",
+    "status": "Status",
+    "priority": "Priority",
+    "assignedCourier": "Courier",
+    "unassigned": "Unassigned",
+    "empty": "No orders yet",
+    "detail": "Order details",
+    "customer": "Customer",
+    "assign": "Assign a courier",
+    "assignAction": "Assign",
+    "cancel": "Cancel",
+    "history": "Status history"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Last 30 days",
+    "totalOrders": "Orders",
+    "delivered": "Delivered",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "avgDeliveryTime": "Avg delivery time",
+    "avgDeliveryTimeHint": "Accepted to delivered",
+    "avgDispatchTime": "Avg dispatch time",
+    "avgDispatchTimeHint": "Created to assigned",
+    "avgDistance": "Avg distance",
+    "avgDistanceHint": "Straight-line, not route",
+    "topCouriers": "Top couriers",
+    "deliveries": "deliveries",
+    "noData": "No data for this period"
+  },
+  "status": {
+    "OFFLINE": "Offline",
+    "ONLINE": "Online",
+    "AVAILABLE": "Available",
+    "DELIVERING": "Delivering",
+    "PAUSED": "Paused",
+    "CREATED": "Created",
+    "ASSIGNED": "Assigned",
+    "ACCEPTED": "Accepted",
+    "PICKUP": "Picking up",
+    "PICKED_UP": "Picked up",
+    "DELIVERED": "Delivered",
+    "CANCELLED": "Cancelled",
+    "FAILED": "Failed"
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "close": "Close",
+    "language": "Language",
+    "connected": "Live",
+    "connecting": "Connecting...",
+    "disconnected": "Offline"
+  },
+  "courierNotice": {
+    "title": "This dashboard isn't for couriers",
+    "message": "This screen is for company admins and dispatchers. Use the courier app to manage your deliveries."
+  }
+}

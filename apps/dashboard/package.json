@@ -1,0 +1,30 @@
+{
+  "name": "@courier/dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "predev": "pnpm --filter @courier/shared-types run build",
+    "prebuild": "pnpm --filter @courier/shared-types run build",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@courier/shared-types": "workspace:*",
+    "next": "14.2.15",
+    "next-intl": "^3.19.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.5.4"
+  }
+}

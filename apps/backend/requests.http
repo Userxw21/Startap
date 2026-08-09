@@ -1,0 +1,173 @@
+### Courier Platform — manual API walkthrough
+### Requires the "REST Client" VS Code extension (by Huachao Mao).
+### Click "Send Request" above each block, top to bottom — tokens/ids
+### captured from one response are reused automatically in later requests.
+
+@baseUrl = http://localhost:3000/api/v1
+
+### 1. Register a company + its first admin
+# @name registerCompany
+POST {{baseUrl}}/auth/register-company
+Content-Type: application/json
+
+{
+  "companyName": "Acme Delivery",
+  "adminEmail": "admin@acme.test",
+  "adminFullName": "Admin User",
+  "password": "a-strong-password-123"
+}
+
+### 2. Log in as the admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@acme.test",
+  "password": "a-strong-password-123"
+}
+
+@adminToken = {{loginAdmin.response.body.accessToken}}
+
+### 3. View my company
+GET {{baseUrl}}/companies/me
+Authorization: Bearer {{adminToken}}
+
+### 4. Onboard a courier (creates User + Vehicle + Courier together)
+# @name onboardCourier
+POST {{baseUrl}}/couriers
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "email": "courier1@acme.test",
+  "fullName": "Aziz Kuryer",
+  "password": "a-strong-password-123",
+  "vehicleType": "BICYCLE",
+  "plateNumber": null
+}
+
+@courierId = {{onboardCourier.response.body.id}}
+
+### 5. List couriers (should show the one just onboarded)
+GET {{baseUrl}}/couriers
+Authorization: Bearer {{adminToken}}
+
+### 6. Log in as the courier
+# @name loginCourier
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "courier1@acme.test",
+  "password": "a-strong-password-123"
+}
+
+@courierToken = {{loginCourier.response.body.accessToken}}
+
+### 7. Courier views their own profile
+GET {{baseUrl}}/couriers/me
+Authorization: Bearer {{courierToken}}
+
+### 8. Courier sets their own status to AVAILABLE
+PATCH {{baseUrl}}/couriers/me/status
+Authorization: Bearer {{courierToken}}
+Content-Type: application/json
+
+{
+  "status": "AVAILABLE"
+}
+
+### 9. Register a navigation device
+# @name registerDevice
+POST {{baseUrl}}/devices
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "hardwareId": "DEV-0001"
+}
+
+@deviceId = {{registerDevice.response.body.id}}
+
+### 10. Pair the device to the courier (note the pairingToken — shown only once)
+POST {{baseUrl}}/devices/{{deviceId}}/pair
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "courierId": "{{courierId}}"
+}
+
+### 11. Create an order (Tashkent coordinates)
+# @name createOrder
+POST {{baseUrl}}/orders
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "pickupAddress": "EVOS, Amir Temur ko'chasi",
+  "pickup": { "lat": 41.311081, "lng": 69.240562 },
+  "deliveryAddress": "Customer address, Chilonzor",
+  "delivery": { "lat": 41.32993, "lng": 69.267294 },
+  "customerName": "Customer Name",
+  "customerPhone": "+998901234567"
+}
+
+@orderId = {{createOrder.response.body.id}}
+
+### Sanity check: does the returned pickup/delivery match what you sent? (This is the part worth double-checking first — see README.)
+
+### 12. Assign the order to the courier
+POST {{baseUrl}}/orders/{{orderId}}/assign
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "courierId": "{{courierId}}"
+}
+
+### 13. Courier accepts the order (courier.status should flip to DELIVERING — check step 14)
+POST {{baseUrl}}/orders/{{orderId}}/transition
+Authorization: Bearer {{courierToken}}
+Content-Type: application/json
+
+{
+  "toStatus": "ACCEPTED"
+}
+
+### 14. Confirm courier status flipped to DELIVERING
+GET {{baseUrl}}/couriers/me
+Authorization: Bearer {{courierToken}}
+
+### 15. Advance through the rest of the lifecycle, one call per step:
+POST {{baseUrl}}/orders/{{orderId}}/transition
+Authorization: Bearer {{courierToken}}
+Content-Type: application/json
+
+{ "toStatus": "PICKUP" }
+
+### 16.
+POST {{baseUrl}}/orders/{{orderId}}/transition
+Authorization: Bearer {{courierToken}}
+Content-Type: application/json
+
+{ "toStatus": "PICKED_UP" }
+
+### 17.
+POST {{baseUrl}}/orders/{{orderId}}/transition
+Authorization: Bearer {{courierToken}}
+Content-Type: application/json
+
+{ "toStatus": "DELIVERING" }
+
+### 18.
+POST {{baseUrl}}/orders/{{orderId}}/transition
+Authorization: Bearer {{courierToken}}
+Content-Type: application/json
+
+{ "toStatus": "DELIVERED" }
+
+### 19. Confirm courier status is back to AVAILABLE
+GET {{baseUrl}}/couriers/me
+Authorization: Bearer {{courierToken}}

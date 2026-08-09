@@ -1,0 +1,11 @@
+{
+  "auth": {
+    "invalidCredentials": "Неверный email или пароль",
+    "accountInactive": "Этот аккаунт больше не активен",
+    "sessionExpired": "Сессия истекла, войдите снова"
+  },
+  "orders": {
+    "assigned": "Новый заказ на доставку: #{orderId}",
+    "delivered": "Заказ #{orderId} доставлен"
+  }
+}

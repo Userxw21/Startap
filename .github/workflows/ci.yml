@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  PNPM_VERSION: 9
+  NODE_VERSION: 20
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: courier
+          POSTGRES_PASSWORD: courier_dev_password
+          POSTGRES_DB: courier_platform
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U courier -d courier_platform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      # No cache: pnpm here — that requires a committed pnpm-lock.yaml to
+      # hash for the cache key, which doesn't exist yet (same reason as the
+      # plain `pnpm install` below). Add it back once a lockfile is committed.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Plain install, not --frozen-lockfile: no pnpm-lock.yaml has been
+      # committed yet (this whole project was written without a Node.js
+      # environment available to ever run `pnpm install` — see README).
+      # Once one exists in the repo, switch this to --frozen-lockfile in
+      # both jobs so CI actually verifies against the pinned lockfile
+      # instead of silently re-resolving versions on every run.
+      - run: pnpm install
+
+      - name: Build shared-types
+        run: pnpm --filter @courier/shared-types run build
+
+      # ubuntu-latest runner images are documented to ship postgresql-client
+      # preinstalled, but installing (a no-op if already present) is cheap
+      # insurance against that changing out from under this workflow.
+      - name: Ensure psql is available
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      # GitHub Actions "services" containers don't support mounting
+      # docker-entrypoint-initdb.d the way docker-compose does — apply
+      # docker/init-db.sql by hand instead. Same file, same effect, just
+      # triggered manually instead of automatically. See that file's own
+      # comments for why the restricted "courier_app" role needs to exist
+      # at all (RLS is a no-op for the "courier" superuser/table owner).
+      - name: Create restricted app role (docker/init-db.sql)
+        run: psql -h localhost -U courier -d courier_platform -f docker/init-db.sql
+        env:
+          PGPASSWORD: courier_dev_password
+
+      - name: Run migrations
+        run: pnpm --filter @courier/backend run migration:run
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: courier
+          DB_PASSWORD: courier_dev_password
+          DB_NAME: courier_platform
+
+      - name: Build (type-check) backend
+        run: pnpm --filter @courier/backend run build
+
+      - name: Unit tests
+        run: pnpm --filter @courier/backend run test
+
+      - name: e2e tests
+        run: pnpm --filter @courier/backend run test:e2e
+        env:
+          NODE_ENV: test
+          PORT: 3000
+          API_PREFIX: api/v1
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: courier_platform
+          # Owner creds (migrations already ran above) — some e2e specs
+          # (rls.e2e-spec.ts) deliberately connect as both roles to prove
+          # the RLS backstop actually restricts the app role and not the owner.
+          DB_USERNAME: courier
+          DB_PASSWORD: courier_dev_password
+          DB_APP_USERNAME: courier_app
+          DB_APP_PASSWORD: courier_app_dev_password
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_ACCESS_SECRET: ci-only-access-secret-never-use-in-production
+          JWT_ACCESS_TTL: 15m
+          JWT_REFRESH_SECRET: ci-only-refresh-secret-never-use-in-production
+          JWT_REFRESH_TTL: 30d
+          DEFAULT_LOCALE: uz
+
+  dashboard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      # No cache: pnpm here — that requires a committed pnpm-lock.yaml to
+      # hash for the cache key, which doesn't exist yet (same reason as the
+      # plain `pnpm install` below). Add it back once a lockfile is committed.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Plain install, not --frozen-lockfile: no pnpm-lock.yaml has been
+      # committed yet (this whole project was written without a Node.js
+      # environment available to ever run `pnpm install` — see README).
+      # Once one exists in the repo, switch this to --frozen-lockfile in
+      # both jobs so CI actually verifies against the pinned lockfile
+      # instead of silently re-resolving versions on every run.
+      - run: pnpm install
+
+      - name: Build shared-types
+        run: pnpm --filter @courier/shared-types run build
+
+      # No live backend needed here: every dashboard page reads cookies()
+      # (locale, auth), which makes Next.js treat all of them as dynamically
+      # rendered — none are pre-rendered/fetched at build time, so this step
+      # only proves the app type-checks and compiles, not that a real
+      # backend round-trip works. That's what the backend job's e2e tests
+      # (and, eventually, a real click-through) are for.
+      - name: Build (type-check) dashboard
+        run: pnpm --filter @courier/dashboard run build
+        env:
+          BACKEND_API_URL: http://localhost:3000/api/v1
+          NEXT_PUBLIC_BACKEND_WS_URL: http://localhost:3000

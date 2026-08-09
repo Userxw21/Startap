@@ -1,0 +1,17 @@
+{
+  "name": "courier-platform",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:shared-types": "pnpm --filter @courier/shared-types run build",
+    "dev:backend": "pnpm --filter @courier/backend run start:dev",
+    "dev:dashboard": "pnpm --filter @courier/dashboard run dev",
+    "build:backend": "pnpm --filter @courier/backend run build",
+    "test:backend": "pnpm --filter @courier/backend run test",
+    "migration:run": "pnpm --filter @courier/backend run migration:run",
+    "migration:generate": "pnpm --filter @courier/backend run migration:generate"
+  }
+}

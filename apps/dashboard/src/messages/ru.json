@@ -1,0 +1,98 @@
+{
+  "auth": {
+    "title": "Курьерская платформа",
+    "subtitle": "Вход в панель управления",
+    "email": "Email",
+    "password": "Пароль",
+    "submit": "Войти",
+    "submitting": "Вход...",
+    "invalidCredentials": "Неверный email или пароль"
+  },
+  "nav": {
+    "overview": "Обзор",
+    "couriers": "Курьеры",
+    "orders": "Заказы",
+    "analytics": "Статистика",
+    "logout": "Выйти"
+  },
+  "overview": {
+    "title": "Обзор",
+    "activeCouriers": "Активные курьеры",
+    "delivering": "Доставляют",
+    "available": "Свободны",
+    "offline": "Офлайн",
+    "totalOrders": "Заказы",
+    "createdOrders": "Новые",
+    "activeOrders": "В процессе",
+    "deliveredOrders": "Доставлено"
+  },
+  "couriers": {
+    "title": "Курьеры",
+    "name": "Имя",
+    "email": "Email",
+    "vehicle": "Транспорт",
+    "status": "Статус",
+    "empty": "Курьеров пока нет"
+  },
+  "orders": {
+    "title": "Заказы",
+    "pickup": "Забор",
+    "delivery": "Доставка",
+    "status": "Статус",
+    "priority": "Приоритет",
+    "assignedCourier": "Курьер",
+    "unassigned": "Не назначен",
+    "empty": "Заказов пока нет",
+    "detail": "Детали заказа",
+    "customer": "Клиент",
+    "assign": "Назначить курьера",
+    "assignAction": "Назначить",
+    "cancel": "Отменить",
+    "history": "История статусов"
+  },
+  "analytics": {
+    "title": "Статистика",
+    "subtitle": "Последние 30 дней",
+    "totalOrders": "Заказы",
+    "delivered": "Доставлено",
+    "failed": "Неудачные",
+    "cancelled": "Отменённые",
+    "avgDeliveryTime": "Среднее время доставки",
+    "avgDeliveryTimeHint": "От принятия до доставки",
+    "avgDispatchTime": "Среднее время назначения",
+    "avgDispatchTimeHint": "От создания до назначения",
+    "avgDistance": "Среднее расстояние",
+    "avgDistanceHint": "По прямой (не маршрут)",
+    "topCouriers": "Самые активные курьеры",
+    "deliveries": "доставок",
+    "noData": "Нет данных за этот период"
+  },
+  "status": {
+    "OFFLINE": "Офлайн",
+    "ONLINE": "Онлайн",
+    "AVAILABLE": "Свободен",
+    "DELIVERING": "Доставляет",
+    "PAUSED": "Пауза",
+    "CREATED": "Создан",
+    "ASSIGNED": "Назначен",
+    "ACCEPTED": "Принят",
+    "PICKUP": "Забирает",
+    "PICKED_UP": "Забрал",
+    "DELIVERED": "Доставлен",
+    "CANCELLED": "Отменён",
+    "FAILED": "Неудача"
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "save": "Сохранить",
+    "close": "Закрыть",
+    "language": "Язык",
+    "connected": "В сети",
+    "connecting": "Подключение...",
+    "disconnected": "Нет связи"
+  },
+  "courierNotice": {
+    "title": "Эта панель не для курьеров",
+    "message": "Этот экран предназначен для администраторов компании и диспетчеров. Для управления доставками используйте курьерское приложение."
+  }
+}

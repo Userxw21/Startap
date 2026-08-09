@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Courier Platform — realtime test client</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 32px auto; padding: 0 16px; color: #15161b; }
+  h1 { font-size: 18px; }
+  fieldset { margin-bottom: 16px; border: 1px solid #d8d9dd; border-radius: 8px; padding: 12px 16px; }
+  label { display: block; font-size: 13px; margin-top: 8px; color: #3a3d47; }
+  input { width: 100%; box-sizing: border-box; padding: 6px 8px; margin-top: 2px; border: 1px solid #d8d9dd; border-radius: 6px; }
+  button { margin-top: 10px; padding: 8px 14px; border-radius: 6px; border: none; background: #2f6fed; color: white; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #status { font-weight: 600; }
+  #log { background: #15161b; color: #eeeef0; font-family: ui-monospace, monospace; font-size: 12px; padding: 12px; height: 320px; overflow-y: auto; border-radius: 8px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>Courier Platform — realtime test client</h1>
+<p>
+  No build step — just open this file directly in a browser. Not part of the
+  app itself, purely for exercising RealtimeGateway without a mobile app or
+  a WebSocket-capable HTTP client (VS Code's REST Client can't do WebSocket).
+</p>
+
+<fieldset>
+  <legend>Connection</legend>
+  <label for="url">Backend URL</label>
+  <input id="url" value="http://localhost:3000" />
+  <label for="token">Access token (paste the accessToken from a /auth/login response — a COURIER account, if you want to test the location handler)</label>
+  <input id="token" placeholder="eyJhbGciOi..." />
+  <button id="connectBtn">Connect</button>
+  <button id="disconnectBtn" disabled>Disconnect</button>
+  <p>Status: <span id="status">disconnected</span></p>
+</fieldset>
+
+<fieldset>
+  <legend>Send courier:location (only works if the token above belongs to a COURIER)</legend>
+  <label for="lat">lat</label>
+  <input id="lat" value="41.311081" />
+  <label for="lng">lng</label>
+  <input id="lng" value="69.240562" />
+  <button id="sendLocationBtn" disabled>Send location</button>
+</fieldset>
+
+<fieldset>
+  <legend>Live event log</legend>
+  <div id="log"></div>
+</fieldset>
+
+<script>
+  let socket = null;
+  const statusEl = document.getElementById('status');
+  const logEl = document.getElementById('log');
+  const connectBtn = document.getElementById('connectBtn');
+  const disconnectBtn = document.getElementById('disconnectBtn');
+  const sendLocationBtn = document.getElementById('sendLocationBtn');
+
+  function log(line) {
+    const time = new Date().toLocaleTimeString();
+    logEl.textContent += `[${time}] ${line}\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  const EVENTS = [
+    'courier:location:update',
+    'courier:status:changed',
+    'order:status:changed',
+    'device:status:changed',
+  ];
+
+  connectBtn.addEventListener('click', () => {
+    const url = document.getElementById('url').value;
+    const token = document.getElementById('token').value;
+
+    socket = io(url, { auth: { token } });
+
+    socket.on('connect', () => {
+      statusEl.textContent = 'connected (' + socket.id + ')';
+      log('connected');
+      connectBtn.disabled = true;
+      disconnectBtn.disabled = false;
+      sendLocationBtn.disabled = false;
+    });
+
+    socket.on('disconnect', (reason) => {
+      statusEl.textContent = 'disconnected';
+      log('disconnected: ' + reason);
+      connectBtn.disabled = false;
+      disconnectBtn.disabled = true;
+      sendLocationBtn.disabled = true;
+    });
+
+    socket.on('connect_error', (err) => {
+      log('connect_error: ' + err.message);
+    });
+
+    EVENTS.forEach((eventName) => {
+      socket.on(eventName, (payload) => {
+        log(eventName + ' ' + JSON.stringify(payload));
+      });
+    });
+  });
+
+  disconnectBtn.addEventListener('click', () => {
+    if (socket) socket.disconnect();
+  });
+
+  sendLocationBtn.addEventListener('click', () => {
+    if (!socket) return;
+    const lat = parseFloat(document.getElementById('lat').value);
+    const lng = parseFloat(document.getElementById('lng').value);
+    socket.emit('courier:location', { lat, lng });
+    log('sent courier:location ' + JSON.stringify({ lat, lng }));
+  });
+</script>
+
+</body>
+</html>
