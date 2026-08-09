@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import * as request from 'supertest';
+import request from 'supertest';
 import { randomUUID } from 'crypto';
 import { AppModule } from '../src/app.module';
 
