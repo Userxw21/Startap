@@ -79,6 +79,13 @@ jobs:
         env:
           PGPASSWORD: courier_dev_password
 
+      # Type-check before touching the database — a pure compile failure and
+      # a migration/SQL failure are different problems, and running this
+      # first means a build error shows up here instead of masquerading as
+      # a "Run migrations" failure two steps later.
+      - name: Build (type-check) backend
+        run: pnpm --filter @courier/backend run build
+
       - name: Run migrations
         run: pnpm --filter @courier/backend run migration:run
         env:
@@ -87,9 +94,6 @@ jobs:
           DB_USERNAME: courier
           DB_PASSWORD: courier_dev_password
           DB_NAME: courier_platform
-
-      - name: Build (type-check) backend
-        run: pnpm --filter @courier/backend run build
 
       - name: Unit tests
         run: pnpm --filter @courier/backend run test
