@@ -21,7 +21,7 @@ export class Delivery extends BaseEntity {
   courier: Courier;
 
   /** Object-storage URL, uploaded via the backend, never a client-supplied URL. */
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   podPhotoUrl: string | null;
 
   @Column({ type: 'timestamptz' })

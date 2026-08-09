@@ -16,9 +16,9 @@ export class Vehicle extends BaseEntity {
   @Column({ type: 'enum', enum: VehicleType })
   type: VehicleType;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   model: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   plateNumber: string | null;
 }

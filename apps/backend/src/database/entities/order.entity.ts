@@ -21,7 +21,7 @@ export class Order extends BaseEntity {
   @JoinColumn({ name: 'companyId' })
   company: Company;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   externalRef: string | null;
 
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.CREATED })
@@ -42,10 +42,10 @@ export class Order extends BaseEntity {
   @Column({ type: 'geography', spatialFeatureType: 'Point', srid: 4326 })
   deliveryLocation: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   customerName: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   customerPhone: string | null;
 
   @Column({ type: 'uuid', nullable: true })

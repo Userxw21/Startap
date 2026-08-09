@@ -31,6 +31,6 @@ export class RefreshToken extends BaseEntity {
   @Column({ type: 'timestamptz', nullable: true })
   revokedAt: Date | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   replacedByTokenHash: string | null;
 }

@@ -28,7 +28,7 @@ export class Device extends BaseEntity {
    * plaintext pairing token itself is returned exactly once, directly by
    * DevicesService.pair(), as a plain field outside this entity. */
   @Exclude()
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   pairingTokenHash: string | null;
 
   @Column({ type: 'uuid', nullable: true })
@@ -37,7 +37,7 @@ export class Device extends BaseEntity {
   @Column({ default: 1 })
   protocolVersion: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   firmwareVersion: string | null;
 
   @Column({ type: 'enum', enum: DeviceStatus, default: DeviceStatus.UNPAIRED })
