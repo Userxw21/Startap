@@ -288,36 +288,23 @@ confirming the database still filters correctly.
 
 ## Continuous Integration
 
-`.github/workflows/ci.yml` runs on every push/PR (once this repo is actually
-pushed to GitHub — it isn't yet, this is purely local right now) and is, as
-of writing, **the fastest way to get real execution feedback on this whole
-project** without needing Node.js/Docker installed locally first: a fresh
-Ubuntu runner, real Postgres+PostGIS and Redis service containers, and it
-runs migrations, the full backend build, unit tests, e2e tests, and a
-dashboard build/type-check — the exact things flagged throughout this README
-as "reasoned carefully, not executed."
+`.github/workflows/ci.yml` runs on every push/PR: a fresh Ubuntu runner,
+real Postgres+PostGIS and Redis service containers, migrations, the full
+backend build, unit tests, e2e tests, and a dashboard build/type-check.
+**Status: green** — pushed, ran, failed four times on real (mechanical, not
+architectural) bugs, all fixed; see "What CI has actually verified" above
+for exactly what that does and doesn't prove.
 
-Two things about it are themselves unverified (everything about this
-repository is, per the running theme):
-- **No `pnpm-lock.yaml` is committed** — there was never a Node.js
-  environment available to generate one, so the workflow uses plain
+Still true and worth knowing:
+- **No `pnpm-lock.yaml` is committed yet** — the workflow uses plain
   `pnpm install` instead of `--frozen-lockfile`, and skips `setup-node`'s
-  pnpm cache (which requires a lockfile to hash). The very first real
-  `pnpm install` anyone runs (locally or by pushing this to GitHub and
-  watching CI attempt it) should have its resulting `pnpm-lock.yaml`
-  committed — after that, switch both jobs to `--frozen-lockfile` and
-  re-enable the pnpm cache for faster, more reproducible runs.
-- **The dashboard job never ran either.** It builds/type-checks but doesn't
-  start a live backend, since every dashboard page reads `cookies()` and is
-  therefore forced-dynamic (never pre-rendered at build time) — so this
-  step can't fail due to an unreachable backend, but it also doesn't prove
-  a real login-and-click-through works. That's still a manual (or future
-  Playwright) verification step.
-
-If you push this to GitHub and the backend job fails, the single most
-likely culprit is whichever raw-SQL/PostGIS code this README has already
-flagged as unverified — check those sections first before assuming the CI
-config itself is wrong.
+  pnpm cache (which requires a lockfile to hash). Commit the lockfile the
+  first time someone runs `pnpm install` for real, then switch both jobs to
+  `--frozen-lockfile` and re-enable the cache for faster, reproducible runs.
+- The dashboard job builds/type-checks but never starts a live backend
+  (every page reads `cookies()`, so nothing pre-renders at build time) —
+  it can't prove a real login-and-click-through works. Still a manual (or
+  future Playwright) step.
 
 ## What's deliberately not here yet
 
@@ -334,83 +321,53 @@ config itself is wrong.
   the initial password directly in the request body — fine for MVP/manual
   onboarding, but a magic-link or SMS-OTP invite is the real production flow)
 
-## ⚠ One thing that genuinely needs verifying first
+## ✅ What CI has actually verified (as of the first green run)
 
-`OrdersService` (create/list/get/transition) uses **raw parameterized SQL**
-(`ST_MakePoint` on write, `ST_X`/`ST_Y` on read) for every query touching
-`pickupLocation`/`deliveryLocation`, instead of TypeORM's `save()`/`find()`.
-This was a deliberate choice, not an oversight: TypeORM does have some
-built-in geometry/geography handling, but there was no live Postgres/PostGIS
-available while writing this to actually confirm its exact behavior in this
-TypeORM version — and shipping unverified ORM behavior on the one part of
-the schema that's hardest to eyeball-review felt worse than writing
-SQL I could reason about by hand with confidence.
+Everything below was written with no Node.js/Docker available to execute it —
+this whole section used to be a list of "reasoned carefully, not run" risks.
+Once pushed, CI (real Postgres+PostGIS, real Redis, real `pnpm install`)
+caught four genuine bugs on the way to green, all fixed in the commit
+history: a TypeScript enum/union mismatch at the `@courier/shared-types`
+boundary in `OrdersService`, a TypeORM CLI module-loading issue
+(`typeorm-ts-node-commonjs` vs. a manual `ts-node` wrapper), eight entity
+columns missing an explicit `type:` (TypeScript can't reflect a `string |
+null` union to a SQL type, so TypeORM needs to be told), and a couple of
+test-file mistakes (`supertest`'s default vs. namespace import, test
+fixture data violating the app's own validation rules). None of those were
+architecture problems — all mechanical, all now fixed.
 
-**Run `test/orders.e2e-spec.ts` first**, before building anything on top of
-Orders — its first test creates an order and asserts the returned
-coordinates match what was sent, which is exactly the thing to confirm. If
-it passes, the raw-SQL approach is solid; if not, that's the file to fix.
+**Now actually confirmed, not just reasoned about:**
+- `OrdersService`'s raw `ST_MakePoint`/`ST_X`/`ST_Y` SQL — `test/orders.e2e-spec.ts`
+  round-trips real coordinates through a real PostGIS instance and asserts
+  they come back unchanged. Passes.
+- The RLS backstop — `test/rls.e2e-spec.ts` passes, meaning Postgres itself
+  (not just application code) actually refuses cross-tenant rows.
+- Migrations, entity schema, and the `courier_app` restricted-role RLS setup
+  (`docker/init-db.sql`) all run cleanly against a fresh database.
+- Auth flow, courier onboarding, device pairing, and the full order lifecycle
+  (assign → accept → pickup → picked up → delivering → delivered, with the
+  courier-status side effects) — `auth.e2e-spec.ts` and
+  `couriers-devices.e2e-spec.ts` pass end to end.
+- `packages/shared-types` actually resolves correctly from both apps via
+  pnpm workspaces + the `predev`/`prebuild` build hooks — no module
+  resolution issues.
+- The dashboard **builds and type-checks** cleanly (`next build`, which also
+  compiles `middleware.ts`) — this is real signal, not a guess, but it's
+  still not the same as a human clicking through it in a browser (see below).
 
-**The dashboard has the same caveat, for the same reason**: it was written
-with no Node.js available in this environment to actually run `next dev`
-against it, so nothing about it has executed even once. The most likely
-failure points, if something breaks on first run:
-- `middleware.ts` lives at `apps/dashboard/src/middleware.ts` (not the
-  project root) because the app directory is under `src/` — this matches
-  Next.js's documented convention, but double-check it's actually being
-  picked up (you'll know immediately: visiting a protected page while logged
-  out should redirect to `/login` — if it doesn't, the middleware isn't running).
-- The Server Actions bound with `.bind(null, order.id)` in
-  `orders/[id]/page.tsx` (a documented Next.js pattern for passing extra
-  arguments to a form action) — worth a first-click confirmation on the
-  "assign courier" and "cancel" buttons.
-- `next-intl` version compatibility with Next.js 14.2.15 — the package
-  versions in `package.json` are what I'd pick with confidence, not what
-  I've run.
-
-None of this is exotic — it's the same "reasoned carefully, not executed"
-situation as the Orders module above, just for a different stack. Try
-`/login` first, then `/overview`, and report back whatever breaks.
-
-**Same caveat again for the realtime module** — also written and never run.
-The parts most worth a skeptical first look:
-- The WS handshake auth (`RealtimeGateway.handleConnection` reading
-  `client.handshake.auth.token`) — confirm a bad/missing token actually gets
-  disconnected, and a good one joins the right room, before trusting the
-  tenant isolation on this side.
-- `LocationsService`'s raw `ST_MakePoint` INSERT — same category of risk as
-  `OrdersService`'s, see above.
-- The Redis adapter's 5s timeout-and-fallback in `RedisIoAdapter` — I
-  reasoned through the happy path and the "Redis is down" path, but haven't
-  watched it actually fall back.
-
-`realtime-test.html`'s two-tab walkthrough (above) is the fastest way to
-build confidence in all three at once.
-
-**And the dashboard's realtime wiring** — same situation again. Specifically
-worth a first look: `/api/realtime-token` actually returning 401 when logged
-out (not silently returning `{token: undefined}` and having the socket hang
-in "connecting" forever), and `RealtimeRefresher`'s debounce actually
-coalescing a burst of events into one `router.refresh()` rather than
-firing one refresh per event.
-
-**And `AnalyticsService`** — the `ST_Distance` query is the same "reasoned
-by hand, not run" PostGIS situation as `OrdersService`/`LocationsService`.
-The two CTE-based time-average queries (delivery time, dispatch time) are
-plain SQL with no PostGIS involved, lower risk, but still worth a glance —
-specifically that `AVG(EXTRACT(EPOCH FROM ...))` returns seconds as expected
-and not some other unit, before trusting the numbers on the page.
-
-**And `packages/shared-types`** — a different kind of risk than the others:
-not PostGIS/SQL correctness, but whether the `predev`/`prebuild` hooks
-actually make both apps resolve `@courier/shared-types` cleanly on a fresh
-`pnpm install`. I reasoned through why compiled output (not raw `.ts`) was
-the safer choice for cross-toolchain resolution (see "Shared types" above),
-but a pnpm workspace's exact resolution behavior is precisely the kind of
-thing that's easy to get subtly wrong without running it. If either app
-fails to start with a "cannot find module '@courier/shared-types'" or
-similar, run `pnpm --filter @courier/shared-types run build` by hand and
-check `packages/shared-types/dist/` actually has `index.js`/`index.d.ts` in it.
+**Still genuinely unverified** (no automated test exercises these yet):
+- The WebSocket gateway itself has no e2e test — `RealtimeGateway`'s JWT
+  handshake auth, room-scoping, and the Redis adapter's connect/fallback
+  behavior are still "reasoned through, not asserted." `realtime-test.html`'s
+  two-tab walkthrough is the fastest manual way to build confidence here.
+- `AnalyticsService`'s `ST_Distance` query and its two CTE-based time-average
+  queries have no e2e test either — worth adding one now that the pattern
+  (`orders.e2e-spec.ts`) exists to copy.
+- The dashboard has never been clicked through by a human in a real browser —
+  `next build` passing rules out a whole class of bugs (bad imports, broken
+  middleware, type errors) but says nothing about whether the login flow,
+  the live-update indicator, or the assign/cancel buttons actually work as
+  intended once you're looking at them.
 
 ## Security notes for whoever deploys this
 
