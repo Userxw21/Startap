@@ -354,15 +354,25 @@ architecture problems — all mechanical, all now fixed.
 - The dashboard **builds and type-checks** cleanly (`next build`, which also
   compiles `middleware.ts`) — this is real signal, not a guess, but it's
   still not the same as a human clicking through it in a browser (see below).
+- `RealtimeGateway`'s JWT handshake auth, company-room scoping, and the
+  `courier:location` → `courier:location:update` round trip —
+  `test/realtime.e2e-spec.ts` connects real `socket.io-client` sockets
+  against the app on a real port, confirms a missing/garbage token gets
+  disconnected, a valid one joins the right room, an emitted location
+  update reaches another socket in the same company, and — the one that
+  actually matters most — a *different* company's socket never receives it.
+- `AnalyticsService`'s `ST_Distance` query and the `order_status_history`
+  CTE joins — `test/analytics.e2e-spec.ts` runs an order through to
+  DELIVERED and confirms the summary reflects real counts, a non-zero
+  `avgDeliveryTimeSeconds`, and a non-zero `avgDeliveryDistanceMeters`
+  (proving the PostGIS distance query actually returns something,
+  not just that it doesn't error).
 
-**Still genuinely unverified** (no automated test exercises these yet):
-- The WebSocket gateway itself has no e2e test — `RealtimeGateway`'s JWT
-  handshake auth, room-scoping, and the Redis adapter's connect/fallback
-  behavior are still "reasoned through, not asserted." `realtime-test.html`'s
-  two-tab walkthrough is the fastest manual way to build confidence here.
-- `AnalyticsService`'s `ST_Distance` query and its two CTE-based time-average
-  queries have no e2e test either — worth adding one now that the pattern
-  (`orders.e2e-spec.ts`) exists to copy.
+**Still genuinely unverified:**
+- The Redis adapter's timeout-and-fallback path in `RedisIoAdapter` — the
+  e2e tests above run against Nest's default in-memory Socket.IO adapter
+  (correct for a single test process), so they don't exercise
+  `main.ts`'s Redis-backed adapter or its 5s-timeout fallback at all.
 - The dashboard has never been clicked through by a human in a real browser —
   `next build` passing rules out a whole class of bugs (bad imports, broken
   middleware, type errors) but says nothing about whether the login flow,
