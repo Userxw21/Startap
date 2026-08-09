@@ -21,14 +21,15 @@ export class UsersService {
   }
 
   /**
-   * companyId and actorUserId always come from the authenticated caller
-   * (CurrentUser), never from the request body — a dispatcher must not be
-   * able to specify an arbitrary companyId and create a user in someone
-   * else's tenant.
+   * Called by InvitesService once a dispatcher invite is accepted — never
+   * directly from a controller. companyId/actorUserId trace back to the
+   * Invite record (itself created by an authenticated COMPANY_ADMIN), not
+   * request input, so a dispatcher can't specify an arbitrary companyId and
+   * create a user in someone else's tenant.
    */
   async createDispatcher(params: {
     companyId: string;
-    actorUserId: string;
+    actorUserId: string | null;
     email: string;
     fullName: string;
     password: string;

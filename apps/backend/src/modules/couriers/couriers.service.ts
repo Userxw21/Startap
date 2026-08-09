@@ -30,7 +30,7 @@ export class CouriersService {
    */
   async onboard(params: {
     companyId: string;
-    actorUserId: string;
+    actorUserId: string | null;
     email: string;
     fullName: string;
     password: string;

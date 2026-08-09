@@ -4,25 +4,16 @@ import { LocationsService } from './locations.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../../database/entities';
-import { CreateCourierDto } from './dto/create-courier.dto';
 import { UpdateCourierStatusDto } from './dto/update-courier-status.dto';
 import { RecordLocationDto } from './dto/record-location.dto';
 
+/** Onboarding (creating a courier account) now happens via InvitesModule — see that module. */
 @Controller('couriers')
 export class CouriersController {
   constructor(
     private readonly couriersService: CouriersService,
     private readonly locationsService: LocationsService,
   ) {}
-
-  @Roles(UserRole.COMPANY_ADMIN, UserRole.DISPATCHER)
-  @Post()
-  onboard(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateCourierDto) {
-    if (!user.companyId) {
-      throw new ForbiddenException('This account is not attached to a company');
-    }
-    return this.couriersService.onboard({ companyId: user.companyId, actorUserId: user.userId, ...dto });
-  }
 
   @Roles(UserRole.COMPANY_ADMIN, UserRole.DISPATCHER)
   @Get()

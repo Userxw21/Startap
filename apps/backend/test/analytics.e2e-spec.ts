@@ -4,6 +4,7 @@ import { Reflector } from '@nestjs/core';
 import request from 'supertest';
 import { randomUUID } from 'crypto';
 import { AppModule } from '../src/app.module';
+import { onboardCourierViaInvite } from './helpers';
 
 /**
  * Runs one order through its full DELIVERED lifecycle (same pattern as
@@ -43,21 +44,14 @@ describe('Analytics (e2e)', () => {
       .send({ email: `admin-${suffix}@example.com`, password: 'a-strong-enough-password-123' });
     adminToken = login.body.accessToken;
 
-    const courier = await request(app.getHttpServer())
-      .post('/api/v1/couriers')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        email: `courier-${suffix}@example.com`,
-        fullName: 'Analytics Test Courier',
-        password: 'a-strong-enough-password-123',
-        vehicleType: 'BICYCLE',
-      });
-    courierId = courier.body.id;
-
-    const courierLogin = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email: `courier-${suffix}@example.com`, password: 'a-strong-enough-password-123' });
-    courierToken = courierLogin.body.accessToken;
+    const courier = await onboardCourierViaInvite(app, adminToken, {
+      email: `courier-${suffix}@example.com`,
+      fullName: 'Analytics Test Courier',
+      password: 'a-strong-enough-password-123',
+      vehicleType: 'BICYCLE',
+    });
+    courierId = courier.courierId;
+    courierToken = courier.accessToken;
 
     // Run one order all the way through to DELIVERED.
     const created = await request(app.getHttpServer())

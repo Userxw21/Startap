@@ -15,3 +15,4 @@ export * from './delivery.entity';
 export * from './notification.entity';
 export * from './audit-log.entity';
 export * from './refresh-token.entity';
+export * from './invite.entity';

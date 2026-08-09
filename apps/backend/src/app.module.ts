@@ -16,6 +16,7 @@ import { CouriersModule } from './modules/couriers/couriers.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { InvitesModule } from './modules/invites/invites.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { TenantModule } from './common/tenant/tenant.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -69,6 +70,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     DevicesModule,
     OrdersModule,
     AnalyticsModule,
+    InvitesModule,
     RealtimeModule,
   ],
   providers: [

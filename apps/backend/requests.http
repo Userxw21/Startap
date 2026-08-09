@@ -33,43 +33,55 @@ Content-Type: application/json
 GET {{baseUrl}}/companies/me
 Authorization: Bearer {{adminToken}}
 
-### 4. Onboard a courier (creates User + Vehicle + Courier together)
-# @name onboardCourier
-POST {{baseUrl}}/couriers
+### 4. Invite a courier — note there's no password here. The admin never
+### sets or sees a courier's password; the invitee picks their own when
+### they accept (step 6). There's no email/SMS delivery wired up yet (see
+### README), so the "token" in this response is what you'd normally send
+### the invitee via a link — for now, just copy it to the next request by hand.
+# @name createInvite
+POST {{baseUrl}}/invites
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
   "email": "courier1@acme.test",
   "fullName": "Aziz Kuryer",
-  "password": "a-strong-password-123",
+  "role": "COURIER",
   "vehicleType": "BICYCLE",
   "plateNumber": null
 }
 
-@courierId = {{onboardCourier.response.body.id}}
+@inviteToken = {{createInvite.response.body.token}}
 
-### 5. List couriers (should show the one just onboarded)
-GET {{baseUrl}}/couriers
-Authorization: Bearer {{adminToken}}
+### 5. Preview the invite (what an accept-invite page would show before asking for a password)
+GET {{baseUrl}}/invites/preview/{{inviteToken}}
 
-### 6. Log in as the courier
-# @name loginCourier
-POST {{baseUrl}}/auth/login
+### 6. Accept the invite — this is where the courier actually sets their
+### password, and creates the account (User + Vehicle + Courier). Returns
+### login tokens directly, no separate login call needed.
+# @name acceptInvite
+POST {{baseUrl}}/invites/accept
 Content-Type: application/json
 
 {
-  "email": "courier1@acme.test",
+  "token": "{{inviteToken}}",
   "password": "a-strong-password-123"
 }
 
-@courierToken = {{loginCourier.response.body.accessToken}}
+@courierToken = {{acceptInvite.response.body.accessToken}}
 
-### 7. Courier views their own profile
+### 7. Courier views their own profile (this is where the Courier id lives — used below)
+# @name courierProfile
 GET {{baseUrl}}/couriers/me
 Authorization: Bearer {{courierToken}}
 
-### 8. Courier sets their own status to AVAILABLE
+@courierId = {{courierProfile.response.body.id}}
+
+### 8. List couriers (should show the one just onboarded)
+GET {{baseUrl}}/couriers
+Authorization: Bearer {{adminToken}}
+
+### 9. Courier sets their own status to AVAILABLE
 PATCH {{baseUrl}}/couriers/me/status
 Authorization: Bearer {{courierToken}}
 Content-Type: application/json
@@ -78,7 +90,7 @@ Content-Type: application/json
   "status": "AVAILABLE"
 }
 
-### 9. Register a navigation device
+### 10. Register a navigation device
 # @name registerDevice
 POST {{baseUrl}}/devices
 Authorization: Bearer {{adminToken}}
@@ -90,7 +102,7 @@ Content-Type: application/json
 
 @deviceId = {{registerDevice.response.body.id}}
 
-### 10. Pair the device to the courier (note the pairingToken — shown only once)
+### 11. Pair the device to the courier (note the pairingToken — shown only once)
 POST {{baseUrl}}/devices/{{deviceId}}/pair
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -99,7 +111,7 @@ Content-Type: application/json
   "courierId": "{{courierId}}"
 }
 
-### 11. Create an order (Tashkent coordinates)
+### 12. Create an order (Tashkent coordinates)
 # @name createOrder
 POST {{baseUrl}}/orders
 Authorization: Bearer {{adminToken}}
@@ -118,7 +130,7 @@ Content-Type: application/json
 
 ### Sanity check: does the returned pickup/delivery match what you sent? (This is the part worth double-checking first — see README.)
 
-### 12. Assign the order to the courier
+### 13. Assign the order to the courier
 POST {{baseUrl}}/orders/{{orderId}}/assign
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -127,7 +139,7 @@ Content-Type: application/json
   "courierId": "{{courierId}}"
 }
 
-### 13. Courier accepts the order (courier.status should flip to DELIVERING — check step 14)
+### 14. Courier accepts the order (courier.status should flip to DELIVERING — check step 15)
 POST {{baseUrl}}/orders/{{orderId}}/transition
 Authorization: Bearer {{courierToken}}
 Content-Type: application/json
@@ -136,38 +148,42 @@ Content-Type: application/json
   "toStatus": "ACCEPTED"
 }
 
-### 14. Confirm courier status flipped to DELIVERING
+### 15. Confirm courier status flipped to DELIVERING
 GET {{baseUrl}}/couriers/me
 Authorization: Bearer {{courierToken}}
 
-### 15. Advance through the rest of the lifecycle, one call per step:
+### 16. Advance through the rest of the lifecycle, one call per step:
 POST {{baseUrl}}/orders/{{orderId}}/transition
 Authorization: Bearer {{courierToken}}
 Content-Type: application/json
 
 { "toStatus": "PICKUP" }
 
-### 16.
+### 17.
 POST {{baseUrl}}/orders/{{orderId}}/transition
 Authorization: Bearer {{courierToken}}
 Content-Type: application/json
 
 { "toStatus": "PICKED_UP" }
 
-### 17.
+### 18.
 POST {{baseUrl}}/orders/{{orderId}}/transition
 Authorization: Bearer {{courierToken}}
 Content-Type: application/json
 
 { "toStatus": "DELIVERING" }
 
-### 18.
+### 19.
 POST {{baseUrl}}/orders/{{orderId}}/transition
 Authorization: Bearer {{courierToken}}
 Content-Type: application/json
 
 { "toStatus": "DELIVERED" }
 
-### 19. Confirm courier status is back to AVAILABLE
+### 20. Confirm courier status is back to AVAILABLE
 GET {{baseUrl}}/couriers/me
 Authorization: Bearer {{courierToken}}
+
+### 21. See the analytics summary reflect the delivery just made
+GET {{baseUrl}}/analytics/summary
+Authorization: Bearer {{adminToken}}

@@ -4,6 +4,7 @@ import { Reflector } from '@nestjs/core';
 import request from 'supertest';
 import { randomUUID } from 'crypto';
 import { AppModule } from '../src/app.module';
+import { onboardCourierViaInvite } from './helpers';
 
 /**
  * This is the one file most worth running first once a live Postgres/PostGIS
@@ -42,21 +43,14 @@ describe('Orders (e2e)', () => {
       .send({ email: `admin-${suffix}@example.com`, password: 'a-strong-enough-password-123' });
     adminToken = login.body.accessToken;
 
-    const courier = await request(app.getHttpServer())
-      .post('/api/v1/couriers')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        email: `courier-${suffix}@example.com`,
-        fullName: 'Test Courier',
-        password: 'a-strong-enough-password-123',
-        vehicleType: 'BICYCLE',
-      });
-    courierId = courier.body.id;
-
-    const courierLogin = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email: `courier-${suffix}@example.com`, password: 'a-strong-enough-password-123' });
-    courierToken = courierLogin.body.accessToken;
+    const courier = await onboardCourierViaInvite(app, adminToken, {
+      email: `courier-${suffix}@example.com`,
+      fullName: 'Test Courier',
+      password: 'a-strong-enough-password-123',
+      vehicleType: 'BICYCLE',
+    });
+    courierId = courier.courierId;
+    courierToken = courier.accessToken;
   });
 
   afterAll(async () => {
@@ -133,18 +127,12 @@ describe('Orders (e2e)', () => {
   });
 
   it('rejects a courier acting on an order assigned to a different courier', async () => {
-    const otherCourier = await request(app.getHttpServer())
-      .post('/api/v1/couriers')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        email: `other-courier-${suffix}@example.com`,
-        fullName: 'Other Courier',
-        password: 'a-strong-enough-password-123',
-        vehicleType: 'SCOOTER',
-      });
-    const otherLogin = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email: `other-courier-${suffix}@example.com`, password: 'a-strong-enough-password-123' });
+    const otherCourier = await onboardCourierViaInvite(app, adminToken, {
+      email: `other-courier-${suffix}@example.com`,
+      fullName: 'Other Courier',
+      password: 'a-strong-enough-password-123',
+      vehicleType: 'SCOOTER',
+    });
 
     const created = await request(app.getHttpServer())
       .post('/api/v1/orders')
@@ -161,10 +149,10 @@ describe('Orders (e2e)', () => {
     // The SECOND courier — who has a real Courier profile, just not this order — tries to accept it.
     await request(app.getHttpServer())
       .post(`/api/v1/orders/${created.body.id}/transition`)
-      .set('Authorization', `Bearer ${otherLogin.body.accessToken}`)
+      .set('Authorization', `Bearer ${otherCourier.accessToken}`)
       .send({ toStatus: 'ACCEPTED' })
       .expect(403);
 
-    expect(otherCourier.body.id).not.toBe(courierId);
+    expect(otherCourier.courierId).not.toBe(courierId);
   });
 });

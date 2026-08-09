@@ -5,6 +5,7 @@ import request from 'supertest';
 import { io, Socket } from 'socket.io-client';
 import { randomUUID } from 'crypto';
 import { AppModule } from '../src/app.module';
+import { onboardCourierViaInvite } from './helpers';
 
 /**
  * Exercises RealtimeGateway end to end: JWT handshake auth, company-room
@@ -53,21 +54,14 @@ describe('Realtime (e2e)', () => {
       .send({ email: `admin-a-${suffix}@example.com`, password: 'a-strong-enough-password-123' });
     companyAAdminToken = loginA.body.accessToken;
 
-    const courierA = await request(app.getHttpServer())
-      .post('/api/v1/couriers')
-      .set('Authorization', `Bearer ${companyAAdminToken}`)
-      .send({
-        email: `courier-a-${suffix}@example.com`,
-        fullName: 'Courier A',
-        password: 'a-strong-enough-password-123',
-        vehicleType: 'BICYCLE',
-      });
-    companyACourierId = courierA.body.id;
-
-    const courierALogin = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({ email: `courier-a-${suffix}@example.com`, password: 'a-strong-enough-password-123' });
-    companyACourierToken = courierALogin.body.accessToken;
+    const courierA = await onboardCourierViaInvite(app, companyAAdminToken, {
+      email: `courier-a-${suffix}@example.com`,
+      fullName: 'Courier A',
+      password: 'a-strong-enough-password-123',
+      vehicleType: 'BICYCLE',
+    });
+    companyACourierId = courierA.courierId;
+    companyACourierToken = courierA.accessToken;
 
     // --- Company B: admin only (for the cross-tenant isolation check) ---
     await request(app.getHttpServer()).post('/api/v1/auth/register-company').send({

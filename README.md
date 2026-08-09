@@ -84,9 +84,13 @@ GET    /api/v1/auth/me                   any authenticated role (used by the das
 GET    /api/v1/companies/me              any authenticated role
 
 GET    /api/v1/users                     COMPANY_ADMIN, DISPATCHER
-POST   /api/v1/users/dispatchers         COMPANY_ADMIN
 
-POST   /api/v1/couriers                  COMPANY_ADMIN, DISPATCHER  (onboard: creates User+Vehicle+Courier)
+POST   /api/v1/invites                   COMPANY_ADMIN (role: DISPATCHER or COURIER), DISPATCHER (role: COURIER only)
+GET    /api/v1/invites                   COMPANY_ADMIN, DISPATCHER
+POST   /api/v1/invites/:id/revoke        COMPANY_ADMIN, DISPATCHER
+GET    /api/v1/invites/preview/:token    public  (email/role/company name, before the invitee sets a password)
+POST   /api/v1/invites/accept            public  { token, password } — creates the account, logs in immediately
+
 GET    /api/v1/couriers                  COMPANY_ADMIN, DISPATCHER
 GET    /api/v1/couriers/me               COURIER
 PATCH  /api/v1/couriers/me/status        COURIER  (OFFLINE/ONLINE/AVAILABLE/PAUSED — not DELIVERING, that's system-set)
@@ -112,6 +116,31 @@ with `CANCELLED`/`FAILED` reachable from most non-terminal states. Each transiti
 is validated server-side against both the order's current status and the
 caller's role — see `OrdersService`'s `transitions` table, the single source
 of truth for what's allowed (not scattered `if` statements per endpoint).
+
+## Inviting dispatchers and couriers
+
+There's no `POST /users/dispatchers` or `POST /couriers` (onboard) anymore —
+an admin creating an account and handing someone their own password was
+always flagged as an MVP shortcut, not the real design. Now: `POST /invites`
+takes only an email, name, and role (+ vehicle info for a courier) — never
+a password — and returns a single-use token valid for 7 days. The invitee
+hits `POST /invites/accept` with that token and a password of their own
+choosing, which creates the account (`User` + `Courier` + `Vehicle` for a
+courier invite) and logs them in immediately.
+
+**There's no email/SMS delivery wired up** — `POST /invites`' response
+includes the token in plaintext, and it's on whoever calls that endpoint to
+get it to the invitee some other way for now (copy-paste, a Slack message,
+whatever). `GET /invites/preview/:token` exists so a real accept-invite
+page can show "you're joining {company} as a {role}" before asking for a
+password, without needing to be logged in.
+
+A dispatcher can invite a courier but not another dispatcher — same
+privilege-escalation guard the old direct-creation endpoint had, just moved
+here. `test/couriers-devices.e2e-spec.ts` exercises the whole flow,
+including rejecting a duplicate pending invite, rejecting accepting the
+same invite twice, and confirming the password hash never leaks in any
+response.
 
 ## Real-time (WebSocket)
 
@@ -317,9 +346,14 @@ Still true and worth knowing:
   the still-open Yandex Maps procurement question from the original
   architecture, so it's deliberately not started)
 - The mobile apps (Android/iOS)
-- A real device-invite flow for dispatchers/couriers (right now an admin sets
-  the initial password directly in the request body — fine for MVP/manual
-  onboarding, but a magic-link or SMS-OTP invite is the real production flow)
+- Actual email/SMS delivery for invites — see "Inviting dispatchers and
+  couriers" above. The token exists and the flow works end to end; getting
+  it to the invitee is still a manual copy-paste today.
+- A dashboard UI for sending/managing invites — the API is there
+  (`POST /invites`, `GET /invites`, revoke) but nothing in the dashboard
+  calls it yet, and there's no accept-invite page either (that page would
+  call the two public endpoints, `GET /invites/preview/:token` and
+  `POST /invites/accept`, same as `requests.http` does manually)
 
 ## ✅ What CI has actually verified (as of the first green run)
 
