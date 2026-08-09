@@ -170,7 +170,13 @@ export class OrdersService {
     const manager = this.tenantContext.getManager();
     const order = await this.getByIdOrThrow(companyId, orderId);
 
-    const rule = this.transitions[order.status].find((t) => t.to === toStatus);
+    // order.status comes back typed as OrderRecord's (shared-types) plain
+    // string union, not this file's own OrderStatus enum — a backend enum
+    // member widens to that union with no cast (see shared-types/enums.ts),
+    // but not the reverse, so an explicit cast is needed at this boundary.
+    // Safe: the value is always one of these exact strings, guaranteed by
+    // the Postgres enum column this was read from.
+    const rule = this.transitions[order.status as OrderStatus].find((t) => t.to === toStatus);
     if (!rule) {
       throw new BadRequestException(`Cannot move an order from ${order.status} to ${toStatus}`);
     }
@@ -187,7 +193,7 @@ export class OrdersService {
     }
 
     await manager.query(`UPDATE orders SET status = $1 WHERE id = $2`, [toStatus, orderId]);
-    await this.recordHistory(orderId, order.status, toStatus, actor.userId);
+    await this.recordHistory(orderId, order.status as OrderStatus, toStatus, actor.userId);
     await this.writeAudit(companyId, actor.userId, `order.status.${toStatus.toLowerCase()}`, orderId);
 
     await this.applyCourierStatusSideEffect(manager, order, toStatus);
