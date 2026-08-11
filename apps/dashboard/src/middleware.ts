@@ -4,7 +4,9 @@ import { ACCESS_COOKIE, REFRESH_COOKIE, accessCookieOptions, refreshCookieOption
 const BACKEND_API_URL = process.env.BACKEND_API_URL ?? 'http://localhost:3000/api/v1';
 
 /**
- * Protects everything except /login and framework internals. Access tokens
+ * Protects everything except /login, /accept-invite (public — the invitee
+ * has no account yet, that's the whole point of the page) and framework
+ * internals. Access tokens
  * are short-lived (15m, matching the backend) on purpose, so a courier-
  * company admin leaving the dashboard open all day would otherwise get
  * logged out constantly — this middleware silently refreshes using the
@@ -54,5 +56,5 @@ function redirectToLogin(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/((?!login|api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!login|accept-invite|api|_next/static|_next/image|favicon.ico).*)'],
 };

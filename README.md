@@ -135,6 +135,14 @@ whatever). `GET /invites/preview/:token` exists so a real accept-invite
 page can show "you're joining {company} as a {role}" before asking for a
 password, without needing to be logged in.
 
+The dashboard has both sides of this now: `/invites` (COMPANY_ADMIN/DISPATCHER)
+lists sent invites, lets you send a new one, and shows the shareable
+`/accept-invite?token=...` link once right after creation (with a copy
+button — it's not retrievable again after you navigate away, same as the
+API). `/accept-invite` itself is a public page (added to `middleware.ts`'s
+exclusion list alongside `/login`) that previews the invite and lets the
+invitee set their password.
+
 A dispatcher can invite a courier but not another dispatcher — same
 privilege-escalation guard the old direct-creation endpoint had, just moved
 here. `test/couriers-devices.e2e-spec.ts` exercises the whole flow,
@@ -346,14 +354,11 @@ Still true and worth knowing:
   the still-open Yandex Maps procurement question from the original
   architecture, so it's deliberately not started)
 - The mobile apps (Android/iOS)
-- Actual email/SMS delivery for invites — see "Inviting dispatchers and
-  couriers" above. The token exists and the flow works end to end; getting
-  it to the invitee is still a manual copy-paste today.
-- A dashboard UI for sending/managing invites — the API is there
-  (`POST /invites`, `GET /invites`, revoke) but nothing in the dashboard
-  calls it yet, and there's no accept-invite page either (that page would
-  call the two public endpoints, `GET /invites/preview/:token` and
-  `POST /invites/accept`, same as `requests.http` does manually)
+- Actual email/SMS delivery for invites — the dashboard's `/invites` page
+  (COMPANY_ADMIN/DISPATCHER) sends invites and shows the resulting
+  `/accept-invite?token=...` link once, with a copy button, but getting that
+  link to the invitee is still "copy it and send it yourself" (Slack, WhatsApp,
+  whatever) — no email/SMS provider is wired up.
 
 ## ✅ What CI has actually verified (as of the first green run)
 

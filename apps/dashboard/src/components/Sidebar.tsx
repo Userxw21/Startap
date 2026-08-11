@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/couriers', key: 'couriers' as const },
   { href: '/orders', key: 'orders' as const },
   { href: '/analytics', key: 'analytics' as const },
+  { href: '/invites', key: 'invites' as const },
 ];
 
 export function Sidebar() {
