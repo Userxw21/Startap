@@ -86,6 +86,9 @@ jobs:
       - name: Build (type-check) backend
         run: pnpm --filter @courier/backend run build
 
+      - name: Lint backend
+        run: pnpm --filter @courier/backend run lint
+
       - name: Run migrations
         run: pnpm --filter @courier/backend run migration:run
         env:
@@ -161,3 +164,6 @@ jobs:
         env:
           BACKEND_API_URL: http://localhost:3000/api/v1
           NEXT_PUBLIC_BACKEND_WS_URL: http://localhost:3000
+
+      - name: Lint dashboard
+        run: pnpm --filter @courier/dashboard run lint
