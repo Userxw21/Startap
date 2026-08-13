@@ -432,15 +432,55 @@ architecture problems — all mechanical, all now fixed.
   `next.config.js`) because Next.js server-renders client components too.
   See `apps/dashboard/src/i18n/request.ts` and `next.config.js`.
 
+- Orders end-to-end: dashboard-assign an order, transition it through the
+  full lifecycle (ACCEPTED → PICKUP → PICKED_UP → DELIVERING → DELIVERED)
+  as the courier, and see Analytics correctly reflect it — including a real
+  `ST_Distance` result (3.1km between two real Tashkent coordinates), not
+  just a non-null number.
+- Devices: register → pair (courier's `currentDeviceId` updates) → revoke
+  (clears back to null) — full lifecycle via the API (no dashboard UI for
+  this yet).
+- **Multi-tenant RLS with a second real company**: a second company's admin
+  gets an empty couriers/orders list and a 404 (not a 403, not the record)
+  when requesting the first company's order directly by ID. This is the
+  first time RLS was proven against two real, independently-registered
+  tenants rather than two rows inserted by a test fixture.
+- **Redis outage handling** — stopped the Memurai service and restarted the
+  backend to see what actually happens (this surfaced a real bug, see
+  below), then confirmed the fix, then confirmed normal reconnection after
+  restarting Redis and the backend again.
+
+**Found and fixed via this testing (not caught by any prior CI run):**
+- `next-intl` request-config: see above.
+- **Location-update hang on Redis outage.** `LocationsService.record()` —
+  shared by both the REST `POST /couriers/me/location` endpoint and the
+  WebSocket gateway — awaited `LocationCacheService.set()` first, before the
+  Postgres write. The Socket.IO adapter's Redis client
+  (`RedisIoAdapter`) already had a 5s-timeout-then-fallback wrapper and
+  degrades correctly, confirmed working. The *other*, general-purpose Redis
+  client (`redisClientProvider`, used only by `LocationCacheService`) had
+  none: `lazyConnect: false` plus ioredis's default unlimited retry meant a
+  queued command during an outage waited forever, which hung the calling
+  request indefinitely — verified by actually killing Redis locally, not
+  reasoned about in the abstract. Fixed by adding `commandTimeout`,
+  `maxRetriesPerRequest: 1`, and a bounded `retryStrategy` to the client
+  (`redis.provider.ts`), plus wrapping both `LocationCacheService` methods
+  in try/catch so a cache failure logs and returns gracefully instead of
+  propagating — matching the "cache is a nice-to-have, Postgres is the
+  source of truth" design already stated in that file's own docstring.
+  Confirmed: location updates now return in ~2s (not hang) during a Redis
+  outage, and still correctly persist to Postgres.
+- Also discovered along the way (tooling, not app code): `nest start
+  --watch` does not reliably restart the running process on a file change
+  in this environment — it recompiles ("Found 0 errors") but the old code
+  keeps serving requests. A full process kill + restart is needed to
+  actually pick up backend changes; don't trust the watcher alone when
+  verifying a fix locally.
+
 **Still genuinely unverified:**
-- The Redis adapter's timeout-and-fallback path specifically — confirmed
-  connected and working, but the 5s-timeout-then-fallback-to-in-memory
-  branch itself was never actually triggered (Redis/Memurai was up the
-  whole time).
-- Orders/analytics pages, and the live-location-update indicator
-  specifically (as opposed to the "connected" status) — the golden-path
-  click-through above covered auth, invites, and courier onboarding, not
-  every page.
+- Live-location-update indicator specifically (as opposed to the
+  "connected" status) and the dashboard's map/live-tracking UI, since there
+  isn't one yet.
 
 ## Security notes for whoever deploys this
 
