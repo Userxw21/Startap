@@ -6,11 +6,16 @@ on:
   pull_request:
 
 env:
-  # Pinned to the EXACT patch version verified locally (not just major
-  # "11") — pnpm-workspace.yaml's allowBuilds gate is a very new,
-  # possibly-unstable feature, and a different 11.x patch on the runner
-  # could parse/behave differently than what was proven to work here.
-  PNPM_VERSION: 11.21.0
+  # Reverted to 9 (the version all 6 prior green CI runs used). pnpm 10+
+  # introduced a "ignored build scripts" gate (pnpm-workspace.yaml's
+  # allowBuilds field) that we can't get working reliably in CI: plain
+  # `pnpm install` still failed at the install step after bumping to
+  # 11.21.0 (exact version verified locally), most likely because Linux
+  # resolves different platform-specific optional packages (e.g. a
+  # @next/swc-linux-* binary) with their own postinstall scripts that
+  # were never approved, since the lockfile/allowBuilds list was built on
+  # Windows. pnpm 9 predates this gate entirely, so it's a non-issue.
+  PNPM_VERSION: 9
   NODE_VERSION: 20
 
 jobs:
