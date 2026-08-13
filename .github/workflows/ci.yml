@@ -6,7 +6,11 @@ on:
   pull_request:
 
 env:
-  PNPM_VERSION: 9
+  # Pinned to match the pnpm version the lockfile and pnpm-workspace.yaml's
+  # allowBuilds gate were verified against locally (11.21.0) — the
+  # allowBuilds field and lockfileVersion 9.0 format aren't guaranteed
+  # compatible across pnpm major versions.
+  PNPM_VERSION: 11
   NODE_VERSION: 20
 
 jobs:
@@ -44,20 +48,12 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      # No cache: pnpm here — that requires a committed pnpm-lock.yaml to
-      # hash for the cache key, which doesn't exist yet (same reason as the
-      # plain `pnpm install` below). Add it back once a lockfile is committed.
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
-      # Plain install, not --frozen-lockfile: no pnpm-lock.yaml has been
-      # committed yet (this whole project was written without a Node.js
-      # environment available to ever run `pnpm install` — see README).
-      # Once one exists in the repo, switch this to --frozen-lockfile in
-      # both jobs so CI actually verifies against the pinned lockfile
-      # instead of silently re-resolving versions on every run.
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
 
       - name: Build shared-types
         run: pnpm --filter @courier/shared-types run build
@@ -135,20 +131,12 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      # No cache: pnpm here — that requires a committed pnpm-lock.yaml to
-      # hash for the cache key, which doesn't exist yet (same reason as the
-      # plain `pnpm install` below). Add it back once a lockfile is committed.
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
-      # Plain install, not --frozen-lockfile: no pnpm-lock.yaml has been
-      # committed yet (this whole project was written without a Node.js
-      # environment available to ever run `pnpm install` — see README).
-      # Once one exists in the repo, switch this to --frozen-lockfile in
-      # both jobs so CI actually verifies against the pinned lockfile
-      # instead of silently re-resolving versions on every run.
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
 
       - name: Build shared-types
         run: pnpm --filter @courier/shared-types run build
