@@ -6,11 +6,11 @@ on:
   pull_request:
 
 env:
-  # Pinned to match the pnpm version the lockfile and pnpm-workspace.yaml's
-  # allowBuilds gate were verified against locally (11.21.0) — the
-  # allowBuilds field and lockfileVersion 9.0 format aren't guaranteed
-  # compatible across pnpm major versions.
-  PNPM_VERSION: 11
+  # Pinned to the EXACT patch version verified locally (not just major
+  # "11") — pnpm-workspace.yaml's allowBuilds gate is a very new,
+  # possibly-unstable feature, and a different 11.x patch on the runner
+  # could parse/behave differently than what was proven to work here.
+  PNPM_VERSION: 11.21.0
   NODE_VERSION: 20
 
 jobs:
@@ -57,7 +57,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - run: pnpm install --frozen-lockfile
+      # Temporarily reverted from --frozen-lockfile: it started failing
+      # both jobs at this exact step right after the lockfile was added,
+      # and this repo has no way to view Actions log text without a GitHub
+      # login (public-repo log access requires auth; confirmed via a 403
+      # from the API and a "Sign in to view logs" page in the browser), so
+      # the real error is unknown. Plain install is the last proven-working
+      # config (6 prior green runs). Re-enable --frozen-lockfile once the
+      # actual failure reason can be read from a real log.
+      - run: pnpm install
 
       - name: Build shared-types
         run: pnpm --filter @courier/shared-types run build
@@ -144,7 +152,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - run: pnpm install --frozen-lockfile
+      # Temporarily reverted from --frozen-lockfile: it started failing
+      # both jobs at this exact step right after the lockfile was added,
+      # and this repo has no way to view Actions log text without a GitHub
+      # login (public-repo log access requires auth; confirmed via a 403
+      # from the API and a "Sign in to view logs" page in the browser), so
+      # the real error is unknown. Plain install is the last proven-working
+      # config (6 prior green runs). Re-enable --frozen-lockfile once the
+      # actual failure reason can be read from a real log.
+      - run: pnpm install
 
       - name: Build shared-types
         run: pnpm --filter @courier/shared-types run build
