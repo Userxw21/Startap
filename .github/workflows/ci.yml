@@ -53,24 +53,17 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      # No cache: pnpm here — actions/setup-node's built-in pnpm-cache
-      # detection isn't reliable across all pnpm major versions and broke
-      # the setup-node step outright when tried. Not worth debugging blind
-      # (no log access without a token) since it's a pure perf optimization,
-      # not needed for --frozen-lockfile to work correctly.
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
-      # Temporarily reverted from --frozen-lockfile: it started failing
-      # both jobs at this exact step right after the lockfile was added,
-      # and this repo has no way to view Actions log text without a GitHub
-      # login (public-repo log access requires auth; confirmed via a 403
-      # from the API and a "Sign in to view logs" page in the browser), so
-      # the real error is unknown. Plain install is the last proven-working
-      # config (6 prior green runs). Re-enable --frozen-lockfile once the
-      # actual failure reason can be read from a real log.
-      - run: pnpm install
+      # pnpm-lock.yaml is committed now (verified locally: `npx pnpm@9
+      # install --frozen-lockfile` against this exact lockfile succeeds).
+      # This actually verifies the pinned versions instead of silently
+      # re-resolving on every run. The earlier failure under this flag was
+      # with pnpm 11.21.0, not 9 — see the PNPM_VERSION comment above.
+      - run: pnpm install --frozen-lockfile
 
       - name: Build shared-types
         run: pnpm --filter @courier/shared-types run build
@@ -148,24 +141,17 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      # No cache: pnpm here — actions/setup-node's built-in pnpm-cache
-      # detection isn't reliable across all pnpm major versions and broke
-      # the setup-node step outright when tried. Not worth debugging blind
-      # (no log access without a token) since it's a pure perf optimization,
-      # not needed for --frozen-lockfile to work correctly.
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
 
-      # Temporarily reverted from --frozen-lockfile: it started failing
-      # both jobs at this exact step right after the lockfile was added,
-      # and this repo has no way to view Actions log text without a GitHub
-      # login (public-repo log access requires auth; confirmed via a 403
-      # from the API and a "Sign in to view logs" page in the browser), so
-      # the real error is unknown. Plain install is the last proven-working
-      # config (6 prior green runs). Re-enable --frozen-lockfile once the
-      # actual failure reason can be read from a real log.
-      - run: pnpm install
+      # pnpm-lock.yaml is committed now (verified locally: `npx pnpm@9
+      # install --frozen-lockfile` against this exact lockfile succeeds).
+      # This actually verifies the pinned versions instead of silently
+      # re-resolving on every run. The earlier failure under this flag was
+      # with pnpm 11.21.0, not 9 — see the PNPM_VERSION comment above.
+      - run: pnpm install --frozen-lockfile
 
       - name: Build shared-types
         run: pnpm --filter @courier/shared-types run build
