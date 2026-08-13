@@ -48,10 +48,14 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
+      # No cache: pnpm here — actions/setup-node's built-in pnpm-cache
+      # detection isn't reliable across all pnpm major versions and broke
+      # the setup-node step outright when tried. Not worth debugging blind
+      # (no log access without a token) since it's a pure perf optimization,
+      # not needed for --frozen-lockfile to work correctly.
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
@@ -131,10 +135,14 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
+      # No cache: pnpm here — actions/setup-node's built-in pnpm-cache
+      # detection isn't reliable across all pnpm major versions and broke
+      # the setup-node step outright when tried. Not worth debugging blind
+      # (no log access without a token) since it's a pure perf optimization,
+      # not needed for --frozen-lockfile to work correctly.
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
