@@ -10,6 +10,7 @@
   },
   "nav": {
     "overview": "Обзор",
+    "map": "Карта",
     "couriers": "Курьеры",
     "orders": "Заказы",
     "analytics": "Статистика",
@@ -26,6 +27,11 @@
     "createdOrders": "Новые",
     "activeOrders": "В процессе",
     "deliveredOrders": "Доставлено"
+  },
+  "map": {
+    "title": "Карта",
+    "noApiKey": "Карта ещё не настроена — нужен ключ Google Maps API.",
+    "empty": "Пока нет курьеров с известным местоположением"
   },
   "couriers": {
     "title": "Курьеры",

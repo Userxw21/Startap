@@ -10,6 +10,7 @@
   },
   "nav": {
     "overview": "Overview",
+    "map": "Map",
     "couriers": "Couriers",
     "orders": "Orders",
     "analytics": "Analytics",
@@ -26,6 +27,11 @@
     "createdOrders": "New",
     "activeOrders": "In progress",
     "deliveredOrders": "Delivered"
+  },
+  "map": {
+    "title": "Map",
+    "noApiKey": "The map isn't configured yet — a Google Maps API key is needed.",
+    "empty": "No couriers have a known location yet"
   },
   "couriers": {
     "title": "Couriers",

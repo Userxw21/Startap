@@ -1,43 +1,15 @@
 /**
- * One name per event, used as BOTH the internal EventEmitter2 event name
- * (services emit these, decoupled from knowing a WebSocket gateway exists
- * at all) AND the Socket.IO event name broadcast to clients — see
- * RealtimeGateway's @OnEvent listeners, which are the only place these two
- * meanings meet. Reusing one string for both is deliberate: it keeps "what
- * event is this" a single fact instead of two names to keep in sync.
+ * Re-exported from @courier/shared-types so the dashboard (and any future
+ * client) can import the exact same event names/payload shapes the backend
+ * emits, instead of a hand-maintained duplicate drifting out of sync. This
+ * file's path is kept stable since five modules already import from it —
+ * see events.ts's own history for why one name serves both the internal
+ * EventEmitter2 event and the Socket.IO event broadcast to clients.
  */
-export enum RealtimeEvent {
-  CourierLocationUpdated = 'courier:location:update',
-  CourierStatusChanged = 'courier:status:changed',
-  OrderStatusChanged = 'order:status:changed',
-  DeviceStatusChanged = 'device:status:changed',
-}
-
-export interface CourierLocationUpdatedPayload {
-  companyId: string;
-  courierId: string;
-  lat: number;
-  lng: number;
-  speedMps: number | null;
-  headingDegrees: number | null;
-  recordedAt: string;
-}
-
-export interface CourierStatusChangedPayload {
-  companyId: string;
-  courierId: string;
-  status: string;
-}
-
-export interface OrderStatusChangedPayload {
-  companyId: string;
-  orderId: string;
-  status: string;
-  assignedCourierId: string | null;
-}
-
-export interface DeviceStatusChangedPayload {
-  companyId: string;
-  deviceId: string;
-  status: string;
-}
+export {
+  RealtimeEvent,
+  type CourierLocationUpdatedPayload,
+  type CourierStatusChangedPayload,
+  type OrderStatusChangedPayload,
+  type DeviceStatusChangedPayload,
+} from '@courier/shared-types';

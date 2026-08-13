@@ -227,6 +227,39 @@ side of `realtime-test.html`) trigger a status change or send a location
 update for that same company — the dashboard tab should update within
 about a second, no reload.
 
+## Live map (dashboard)
+
+`/map` shows courier positions on a real map, live. Chose **Google Maps
+Platform** over Yandex Maps here (the originally planned provider) after
+researching both:
+
+- Yandex's free tier explicitly **forbids** "transport tracking" and "closed
+  systems" (anything behind a login) — exactly what this app is, in both
+  respects. Real usage requires their paid Commercial license, priced in
+  rubles, with no transparent self-serve signup (contact-sales only).
+- Google Maps Platform has no such restriction, a transparent self-serve
+  pricing calculator, and a free Maps SDK tier generous enough for a pilot.
+  Confirmed Uzbekistan/Tashkent routing coverage is solid for both providers.
+
+**Setup**: get an API key at
+[console.cloud.google.com/google/maps-apis](https://console.cloud.google.com/google/maps-apis)
+(enable "Maps JavaScript API"), then set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+in `apps/dashboard/.env`. Left unset, `/map` shows a plain "not configured"
+placeholder instead of a broken page or console errors — confirmed by
+testing without a key before one was available.
+
+**How it stays live**: courier markers are seeded from each courier's last
+cached position (`GET /couriers`'s new `lastLocation` field, sourced from
+`LocationCacheService` — the same Redis cache the realtime pipeline already
+maintains) and then updated in place as `courier:location:update` WebSocket
+events arrive, via `components/MapView.tsx`'s own `useRealtimeEvent`
+subscription. Deliberately does **not** use `<RealtimeRefresher />` (the
+`router.refresh()` pattern every other page uses) — that would re-fetch and
+re-render the whole page on every location ping, resetting marker positions
+and fighting the map's own pan/zoom state instead of animating smoothly.
+New couriers only appear on next navigation to the page — an accepted v1
+scope limit, not solved yet.
+
 ## Analytics
 
 `GET /analytics/summary` (and the dashboard's `/analytics` page) computes,

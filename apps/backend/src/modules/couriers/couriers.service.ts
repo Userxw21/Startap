@@ -13,12 +13,14 @@ import {
 } from '../../database/entities';
 import { TenantContextService } from '../../common/tenant/tenant-context.service';
 import { RealtimeEvent, CourierStatusChangedPayload } from '../../realtime/events';
+import { CachedLocation, LocationCacheService } from '../../realtime/location-cache.service';
 
 @Injectable()
 export class CouriersService {
   constructor(
     private readonly tenantContext: TenantContextService,
     private readonly events: EventEmitter2,
+    private readonly locationCache: LocationCacheService,
   ) {}
 
   /**
@@ -89,12 +91,26 @@ export class CouriersService {
     return this.getByIdOrThrow(courier.id);
   }
 
-  async listForCompany(companyId: string): Promise<Courier[]> {
+  /**
+   * `lastLocation` comes from the Redis cache (see LocationCacheService),
+   * not a DB join — null for any courier who's never sent one, or whose
+   * last ping is older than the cache's 90s TTL. Fetched per-courier rather
+   * than a single batch Redis call: this list is small (one company's
+   * couriers) and simplicity here beats a MGET-based cache method that
+   * would only ever have this one caller.
+   */
+  async listForCompany(companyId: string): Promise<(Courier & { lastLocation: CachedLocation | null })[]> {
     const manager = this.tenantContext.getManager();
-    return manager.find(Courier, {
+    const couriers = await manager.find(Courier, {
       where: { companyId },
       relations: { user: true, vehicle: true },
     });
+    return Promise.all(
+      couriers.map(async (courier) => ({
+        ...courier,
+        lastLocation: await this.locationCache.get(courier.id),
+      })),
+    );
   }
 
   async getByUserId(userId: string): Promise<Courier> {

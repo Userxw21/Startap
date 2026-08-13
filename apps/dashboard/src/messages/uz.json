@@ -10,6 +10,7 @@
   },
   "nav": {
     "overview": "Umumiy ko'rinish",
+    "map": "Xarita",
     "couriers": "Kuryerlar",
     "orders": "Buyurtmalar",
     "analytics": "Statistika",
@@ -26,6 +27,11 @@
     "createdOrders": "Yangi",
     "activeOrders": "Jarayonda",
     "deliveredOrders": "Yetkazilgan"
+  },
+  "map": {
+    "title": "Xarita",
+    "noApiKey": "Xarita hali sozlanmagan — Google Maps API kaliti kerak.",
+    "empty": "Hozircha hech bir kuryerning joylashuvi ma'lum emas"
   },
   "couriers": {
     "title": "Kuryerlar",
