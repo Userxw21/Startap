@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "pnpm --filter @courier/shared-types run build",
     "prebuild": "pnpm --filter @courier/shared-types run build",
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

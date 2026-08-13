@@ -24,7 +24,17 @@ docker-compose.yml   Postgres+PostGIS and Redis for local dev
 
 - Node.js 20+
 - pnpm (`npm install -g pnpm`)
-- Docker Desktop (for Postgres/PostGIS + Redis)
+- Docker Desktop (for Postgres/PostGIS + Redis) — **or**, if Docker/WSL2
+  isn't available (e.g. it failed to initialize on Windows 10 in this repo's
+  own dev history), install natively instead: PostgreSQL 16 + the
+  [PostGIS Windows bundle](https://postgis.net/windows_downloads/) for
+  Postgres, and [Memurai](https://www.memurai.com/) (Redis-protocol
+  compatible) for Redis. Both run as normal Windows services on the default
+  ports (5432, 6379) and need no further config beyond running
+  `docker/init-db.sql` by hand against the `courier_platform` database
+  (`psql -U courier -d courier_platform -f docker/init-db.sql`) after
+  creating the `courier` role/database and `CREATE EXTENSION postgis`
+  yourself, since there's no container entrypoint to do it automatically.
 
 ## First-time setup
 
@@ -407,16 +417,30 @@ architecture problems — all mechanical, all now fixed.
   (proving the PostGIS distance query actually returns something,
   not just that it doesn't error).
 
+**Verified locally, end-to-end, in a real browser (no Docker — see below):**
+- Full golden path: register company (API) → dashboard login → live
+  overview page (real-time indicator connected via the actual Redis-backed
+  Socket.IO adapter, not the in-memory test one) → create a courier invite
+  (with vehicle type) → the public `/accept-invite` page correctly previews
+  the company name and role → set a password → account created and
+  auto-logged-in → graceful role-aware redirect ("this dashboard isn't for
+  couriers") → the new courier shows up correctly, tenant-scoped, in the
+  admin's courier list, with no `passwordHash` leaked.
+- This run found and fixed one real bug that `next build` had not caught:
+  `useTranslations` in a `'use client'` page still needs next-intl's
+  request-config file (`src/i18n/request.ts` + `next-intl/plugin` in
+  `next.config.js`) because Next.js server-renders client components too.
+  See `apps/dashboard/src/i18n/request.ts` and `next.config.js`.
+
 **Still genuinely unverified:**
-- The Redis adapter's timeout-and-fallback path in `RedisIoAdapter` — the
-  e2e tests above run against Nest's default in-memory Socket.IO adapter
-  (correct for a single test process), so they don't exercise
-  `main.ts`'s Redis-backed adapter or its 5s-timeout fallback at all.
-- The dashboard has never been clicked through by a human in a real browser —
-  `next build` passing rules out a whole class of bugs (bad imports, broken
-  middleware, type errors) but says nothing about whether the login flow,
-  the live-update indicator, or the assign/cancel buttons actually work as
-  intended once you're looking at them.
+- The Redis adapter's timeout-and-fallback path specifically — confirmed
+  connected and working, but the 5s-timeout-then-fallback-to-in-memory
+  branch itself was never actually triggered (Redis/Memurai was up the
+  whole time).
+- Orders/analytics pages, and the live-location-update indicator
+  specifically (as opposed to the "connected" status) — the golden-path
+  click-through above covered auth, invites, and courier onboarding, not
+  every page.
 
 ## Security notes for whoever deploys this
 
