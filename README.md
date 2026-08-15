@@ -366,22 +366,35 @@ layers is a meaningful speed advantage for a small team, and BLE for the
 hardware nav device (a later phase) has mature RN support
 (`react-native-ble-plx`) either way, so it wasn't a deciding factor.
 
-**No emulator/device available in this dev environment** (see
-Prerequisites) — verified as far as this environment allows:
-- `pnpm --filter @courier/mobile run typecheck` — clean
-- `pnpm --filter @courier/mobile run lint` (`eslint-config-expo`) — clean
+**No Android/iOS emulator or device in this dev environment** (see
+Prerequisites), so verification took two tracks:
+- `pnpm --filter @courier/mobile run typecheck` / `run lint` — clean.
 - `npx expo export --platform android` — a real Metro bundle (822 modules,
-  producing an actual `.hbc` JS bundle), not just a type-check. This is
-  what caught a real bug: `metro.config.js`'s monorepo setup initially had
+  producing an actual `.hbc` JS bundle), not just a type-check. Caught a
+  real bug: `metro.config.js`'s monorepo setup initially had
   `disableHierarchicalLookup: true` (from a commonly-copied Expo-monorepo
   guide), which broke resolution of `@react-navigation/core` — a transitive
   dependency of `@react-navigation/native` living in pnpm's nested
   node_modules. Removed; documented in `metro.config.js` itself.
+- **`pnpm --filter @courier/mobile run web` (`expo start --web`), actually
+  clicked through in a real browser** — added `react-native-web`/`react-dom`
+  for this specifically (not a real target platform for this app; couriers
+  use Android/iOS, this was purely to get a click-testable surface without
+  a device). Full login → home → logout → session-persists-across-reload
+  cycle confirmed working against the real backend. This caught a second
+  real bug: `expo-secure-store` has no working web implementation (throws
+  `getValueWithKeyAsync is not a function`, not a graceful no-op) — fixed
+  by branching `src/lib/auth-storage.ts` on `Platform.OS === 'web'` to use
+  `localStorage` there instead (fine for a verification-only path; not
+  relevant to the real Android/iOS targets, which still use SecureStore).
 
-None of this proves the app actually runs and renders correctly on a real
-device — that needs either your own phone (via `expo start` + the Expo Go
-app, or a dev build for native modules Expo Go doesn't include) or Android
-Studio's emulator installed on a dev machine. Not done yet.
+This is real click-through verification of the auth flow — closer to what
+was done for the dashboard than a typecheck-only pass — but still doesn't
+prove the *native* Android/iOS builds work (native modules, platform-
+specific navigation chrome, and permissions prompts don't exist in the web
+build). That needs your own phone (via `expo start` + the Expo Go app, or
+a dev build for native modules Expo Go doesn't include) or Android
+Studio's emulator. Not done yet.
 
 **Auth model differs from the dashboard's**: no `httpOnly` cookies exist on
 mobile (that's a browser mechanism), so tokens live in `expo-secure-store`
