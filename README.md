@@ -12,6 +12,7 @@ apps/
   backend/     NestJS API — auth, DB schema, multi-tenant isolation, Orders/Couriers/Devices,
                realtime WebSocket gateway (src/realtime/)
   dashboard/   Next.js fleet management dashboard (uz/ru/en)
+  mobile/      Expo/React Native courier app (uz/ru/en) — auth + profile only so far, see "Mobile app" below
 packages/
   shared-types/ API-contract types (Order, Courier, AnalyticsSummary, etc.) used by
                  both apps — see "Shared types" below
@@ -35,6 +36,10 @@ docker-compose.yml   Postgres+PostGIS and Redis for local dev
   (`psql -U courier -d courier_platform -f docker/init-db.sql`) after
   creating the `courier` role/database and `CREATE EXTENSION postgis`
   yourself, since there's no container entrypoint to do it automatically.
+- **For the mobile app specifically**: a phone with the Expo Go app, or
+  Android Studio (emulator) / Xcode (iOS Simulator, macOS only) — none of
+  this was available while `apps/mobile` was built, so it's untested on an
+  actual device/emulator so far. See "Mobile app" below.
 
 ## First-time setup
 
@@ -337,11 +342,64 @@ worth knowing if you're wondering why `document.cookie` won't show them in
 devtools — that's the point, not a bug.
 
 **Note on COURIER-role accounts**: a courier who logs into the dashboard
-(rather than the not-yet-built mobile app) sees a one-screen "this isn't for
+(rather than the mobile app — see below) sees a one-screen "this isn't for
 you" notice instead of the normal Sidebar/Overview — every dashboard page
 calls COMPANY_ADMIN/DISPATCHER-only backend endpoints, so there was nothing
 useful to show them anyway. See `CourierNotice` and the role check at the
 top of `(dashboard)/layout.tsx`.
+
+## Mobile app
+
+`apps/mobile` — Expo/React Native, for couriers only (company
+admins/dispatchers use the dashboard). **Phase 1 scope**: login, session
+persistence, and a placeholder "logged in as X, status Y" screen backed by a
+real `GET /couriers/me` call. No order list, no location sending, no
+navigation UI yet — those are later phases.
+
+**React Native over native (Kotlin Multiplatform + Swift), reversing an
+earlier decision**: the original plan was native-only because Yandex Maps
+had no official React Native/Flutter SDK. Since switching to Google Maps
+Platform (see "Live map" above), that constraint is gone — Google publishes
+official `@googlemaps/react-native-navigation-sdk` (Beta, but backed by the
+`googlemaps` GitHub org, 224+ stars). One codebase instead of two native UI
+layers is a meaningful speed advantage for a small team, and BLE for the
+hardware nav device (a later phase) has mature RN support
+(`react-native-ble-plx`) either way, so it wasn't a deciding factor.
+
+**No emulator/device available in this dev environment** (see
+Prerequisites) — verified as far as this environment allows:
+- `pnpm --filter @courier/mobile run typecheck` — clean
+- `pnpm --filter @courier/mobile run lint` (`eslint-config-expo`) — clean
+- `npx expo export --platform android` — a real Metro bundle (822 modules,
+  producing an actual `.hbc` JS bundle), not just a type-check. This is
+  what caught a real bug: `metro.config.js`'s monorepo setup initially had
+  `disableHierarchicalLookup: true` (from a commonly-copied Expo-monorepo
+  guide), which broke resolution of `@react-navigation/core` — a transitive
+  dependency of `@react-navigation/native` living in pnpm's nested
+  node_modules. Removed; documented in `metro.config.js` itself.
+
+None of this proves the app actually runs and renders correctly on a real
+device — that needs either your own phone (via `expo start` + the Expo Go
+app, or a dev build for native modules Expo Go doesn't include) or Android
+Studio's emulator installed on a dev machine. Not done yet.
+
+**Auth model differs from the dashboard's**: no `httpOnly` cookies exist on
+mobile (that's a browser mechanism), so tokens live in `expo-secure-store`
+(OS-level encrypted storage — Android Keystore / iOS Keychain), and
+`src/lib/api.ts` handles the refresh-on-401 dance itself (the dashboard
+relies on `middleware.ts` for that server-side). See that file's comments
+for how it differs from `apps/dashboard/src/lib/api.ts`.
+
+**Setup** (once you have a way to run it):
+```bash
+cp apps/mobile/.env.example apps/mobile/.env
+pnpm install
+pnpm --filter @courier/mobile run start
+```
+For a physical device or the Android emulator, `localhost` in
+`EXPO_PUBLIC_BACKEND_API_URL` won't reach your dev machine — see the
+comment in `.env.example` for the fix (LAN IP, or `10.0.2.2` for the
+Android emulator specifically).
 
 ## Running tests
 

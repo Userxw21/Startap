@@ -14,3 +14,13 @@ export interface SafeUser {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
+/** POST /auth/login and POST /auth/refresh both return this shape (see AuthService). */
+export interface LoginResponse extends TokenPair {
+  user: SafeUser;
+}

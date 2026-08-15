@@ -170,3 +170,36 @@ jobs:
 
       - name: Lint dashboard
         run: pnpm --filter @courier/dashboard run lint
+
+  mobile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared-types
+        run: pnpm --filter @courier/shared-types run build
+
+      # No emulator/device in CI (or in this project's dev environment —
+      # see README's Prerequisites), so this is as far as CI can verify:
+      # types check and the app compiles. `expo export` (a real Metro
+      # bundle, closer to "does this actually run" than tsc alone) was run
+      # manually during development and is not part of CI, since it needs
+      # network access to Expo's services and adds real time for a check
+      # tsc already covers structurally.
+      - name: Type-check mobile
+        run: pnpm --filter @courier/mobile run typecheck
+
+      - name: Lint mobile
+        run: pnpm --filter @courier/mobile run lint
