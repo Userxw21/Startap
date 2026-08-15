@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsIn, IsInt, IsString, Max, Min, validateSync } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min, validateSync } from 'class-validator';
 
 class EnvironmentVariables {
   @IsIn(['development', 'staging', 'production', 'test'])
@@ -12,6 +12,15 @@ class EnvironmentVariables {
 
   @IsString()
   API_PREFIX: string;
+
+  /** Comma-separated allowed CORS origins. Optional in dev/test, required in production — see main.ts. */
+  @IsOptional()
+  @IsString()
+  CORS_ORIGIN?: string;
+
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  DB_SSL?: string;
 
   @IsString()
   DB_HOST: string;

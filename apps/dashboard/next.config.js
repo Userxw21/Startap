@@ -12,6 +12,10 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Produces a minimal self-contained server bundle (.next/standalone) —
+  // used by the Dockerfile so the deployed image doesn't need to ship the
+  // full node_modules tree. No effect on `next dev`.
+  output: 'standalone',
   eslint: {
     // .eslintrc.json exists now, and CI runs `next lint` as its own explicit
     // step (see .github/workflows/ci.yml) — kept `true` anyway so a lint

@@ -515,6 +515,49 @@ architecture problems — all mechanical, all now fixed.
   "connected" status) and the dashboard's map/live-tracking UI, since there
   isn't one yet.
 
+## Production readiness
+
+Audited the codebase against "could this actually run in production" and
+fixed what was clearly wrong regardless of hosting choice:
+
+- **CORS was wide open** (`app.enableCors()`, no options — any origin,
+  anywhere). Fixed: reads `CORS_ORIGIN` (comma-separated) from config, and
+  **refuses to boot in production without it set** rather than silently
+  defaulting to permissive. Dev/test stay permissive (no real attacker to
+  defend against on a local machine).
+- **No health check endpoint** — nothing for a load balancer/orchestrator to
+  poll. Added `GET /health` (excluded from the `api/v1` prefix, so it's at
+  the plain `/health` path most platforms expect), checks the DB connection
+  specifically via `SELECT 1`, not just "is the process alive."
+- **No TLS option for Postgres** — most managed providers (Render, Railway,
+  Supabase, Neon, RDS) reject a plain connection outright. Added `DB_SSL`
+  env var, wired into the TypeORM config.
+- **No HTTP security headers** — added `helmet`.
+- **No Dockerfiles** — added one per app (`apps/backend/Dockerfile`,
+  `apps/dashboard/Dockerfile`), standard multi-stage pnpm-monorepo pattern.
+  **Not build-tested** — this dev environment has no working Docker (see
+  Prerequisites). Verify with `docker build` before relying on them.
+- Rate limiting (`@nestjs/throttler`, 60 req/min) was already in place —
+  confirmed, not new.
+
+**Deliberately not solved here** (needs your input, not a code fix):
+- **Hosting target.** Nothing here assumes a specific platform. Where this
+  runs determines a lot: does it get a Dockerfile-based deploy (Render,
+  Railway, Fly.io) or something else (a plain VPS, Vercel for the dashboard
+  specifically)? Do you want managed Postgres/Redis or self-hosted?
+- **Real secrets.** `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET`/DB passwords are
+  still plain env vars — fine if your hosting platform has its own secret
+  storage (most do), not fine committed anywhere or left as the dev values.
+- **Running migrations against production data.** The Dockerfile's runtime
+  stage only has compiled `dist/`, not the TypeScript `data-source.ts` +
+  `ts-node` the migration CLI (`typeorm-ts-node-commonjs`) needs — migrations
+  are meant to run as a deliberate separate step (e.g. in CI/CD, or from the
+  `build` stage which still has full source), not automatically on every
+  container boot. That's a scope decision, not an oversight: you want to see
+  a migration plan before it touches real data, not have it fire silently.
+- **A domain + DNS + SSL termination** — not decided, not set up.
+- Google Maps billing (see "Live map" above) is its own open item.
+
 ## Security notes for whoever deploys this
 
 - `docker/init-db.sql` is **local-dev only** — it hardcodes a password. Phase

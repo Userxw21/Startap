@@ -23,6 +23,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TenantScopeInterceptor } from './common/tenant/tenant-scope.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
         entities: Object.values(entities).filter((e) => typeof e === 'function'),
         synchronize: false,
         logging: config.get('nodeEnv') === 'development',
+        ssl: config.get('database.ssl') ? { rejectUnauthorized: false } : false,
       }),
     }),
     ThrottlerModule.forRoot({
@@ -73,6 +75,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     InvitesModule,
     RealtimeModule,
   ],
+  controllers: [AppController],
   providers: [
     // Order matters: auth guard establishes request.user, then RBAC, then
     // the tenant interceptor opens the RLS-scoped transaction using that user.
