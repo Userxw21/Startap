@@ -36,6 +36,7 @@ export class CouriersService {
     email: string;
     fullName: string;
     password: string;
+    phone: string;
     preferredLanguage?: SupportedLocale;
     vehicleType: VehicleType;
     vehicleModel?: string;
@@ -56,6 +57,7 @@ export class CouriersService {
         email: params.email,
         fullName: params.fullName,
         passwordHash,
+        phone: params.phone,
         role: UserRole.COURIER,
         preferredLanguage: params.preferredLanguage ?? SupportedLocale.UZ,
       }),

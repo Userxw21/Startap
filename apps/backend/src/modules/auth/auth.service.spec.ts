@@ -30,6 +30,8 @@ describe('AuthService', () => {
   let dataSource: { transaction: jest.Mock };
   let jwt: { signAsync: jest.Mock };
   let config: ConfigService;
+  let otp: { issue: jest.Mock; verify: jest.Mock };
+  let sms: { send: jest.Mock };
 
   const FIXED_PASSWORD = 'super-secret-passw0rd';
   let passwordHash: string;
@@ -55,6 +57,9 @@ describe('AuthService', () => {
         })[key],
     } as unknown as ConfigService;
 
+    otp = { issue: jest.fn(), verify: jest.fn() };
+    sms = { send: jest.fn().mockResolvedValue(undefined) };
+
     service = new AuthService(
       users as any,
       companies as any,
@@ -63,6 +68,8 @@ describe('AuthService', () => {
       dataSource as any,
       jwt as unknown as JwtService,
       config,
+      otp as any,
+      sms as any,
     );
   });
 
@@ -203,6 +210,74 @@ describe('AuthService', () => {
       expect(result.admin.role).toBe(UserRole.COMPANY_ADMIN);
       expect(result.company.status).toBe(CompanyStatus.ACTIVE);
       expect(result.company.plan).toBe(CompanyPlan.TRIAL);
+    });
+  });
+
+  describe('forgotPassword', () => {
+    const courierPhone = '998911234567';
+
+    it('sends an SMS when the phone matches an active courier account', async () => {
+      users.findOne.mockResolvedValue({ id: 'courier-1', phone: courierPhone, role: UserRole.COURIER, isActive: true });
+      otp.issue.mockResolvedValue('123456');
+
+      await service.forgotPassword(courierPhone);
+
+      expect(sms.send).toHaveBeenCalledWith(courierPhone, expect.stringContaining('123456'));
+    });
+
+    it('does nothing when the phone matches no account — same "do not reveal" posture as login()', async () => {
+      users.findOne.mockResolvedValue(null);
+
+      await service.forgotPassword(courierPhone);
+
+      expect(otp.issue).not.toHaveBeenCalled();
+      expect(sms.send).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when a code was already issued too recently (OtpService cooldown)', async () => {
+      users.findOne.mockResolvedValue({ id: 'courier-1', phone: courierPhone, role: UserRole.COURIER, isActive: true });
+      otp.issue.mockResolvedValue(null);
+
+      await service.forgotPassword(courierPhone);
+
+      expect(sms.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resetPassword', () => {
+    const courierPhone = '998911234567';
+
+    it('rejects a wrong/expired code without saying whether the phone is registered', async () => {
+      otp.verify.mockResolvedValue(false);
+
+      await expect(
+        service.resetPassword({ phone: courierPhone, code: '000000', newPassword: 'a-new-strong-password' }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(users.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects a correct code if no account matches the phone (defense in depth)', async () => {
+      otp.verify.mockResolvedValue(true);
+      users.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.resetPassword({ phone: courierPhone, code: '123456', newPassword: 'a-new-strong-password' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('updates the password and revokes every existing refresh token for the account', async () => {
+      otp.verify.mockResolvedValue(true);
+      const user = { id: 'courier-1', phone: courierPhone, role: UserRole.COURIER, passwordHash: 'old-hash' };
+      users.findOne.mockResolvedValue(user);
+
+      await service.resetPassword({ phone: courierPhone, code: '123456', newPassword: 'a-new-strong-password' });
+
+      expect(users.save).toHaveBeenCalledWith(expect.objectContaining({ id: 'courier-1' }));
+      expect(users.save.mock.calls[0][0].passwordHash).not.toBe('old-hash');
+      expect(refreshTokens.update).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'courier-1' }),
+        expect.objectContaining({ revokedAt: expect.any(Date) }),
+      );
     });
   });
 });

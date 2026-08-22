@@ -72,7 +72,7 @@ describe('Couriers + Devices (e2e)', () => {
   it('accepts the invite, creating the account and never leaking the password hash', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/v1/invites/accept')
-      .send({ token: inviteToken, password: courierPassword })
+      .send({ token: inviteToken, password: courierPassword, phone: '998901234567' })
       .expect(201);
 
     expect(res.body.user.email).toBe(courierEmail);

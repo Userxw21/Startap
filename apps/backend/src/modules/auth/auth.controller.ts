@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { RegisterCompanyDto } from './dto/register-company.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Public } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 
@@ -43,6 +45,29 @@ export class AuthController {
   @Post('logout')
   async logout(@Body() dto: RefreshDto) {
     await this.authService.logout(dto.refreshToken);
+  }
+
+  /**
+   * Tightly throttled (3/15min, per-IP) on top of OtpService's own
+   * per-phone 60s cooldown — each request that gets past the cooldown costs
+   * real money (an SMS), so this is one of the few endpoints where the
+   * default 60/min global limit (see ThrottlerModule in app.module.ts)
+   * would be a real abuse vector, not just a nicety.
+   */
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 900_000 } })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto.phone);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto);
   }
 
   /** Not @Public() — requires a valid access token. Used by the dashboard to know who's logged in. */

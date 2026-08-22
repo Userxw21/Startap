@@ -48,6 +48,26 @@ export function AcceptInviteForm({
           </p>
         )}
 
+        {role === 'COURIER' && (
+          <>
+            <label className="mt-6 block text-sm font-medium text-ink-700" htmlFor="phone">
+              {t('phone')}
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              required
+              placeholder="998901234567"
+              pattern="998\d{9}"
+              title={t('phoneHint')}
+              autoComplete="tel"
+              className="mt-1 w-full rounded-sm border border-ink-200 px-3 py-2 text-base outline-none focus:border-accent-500"
+            />
+            <p className="mt-1 text-xs text-ink-500">{t('phoneHint')}</p>
+          </>
+        )}
+
         <label className="mt-6 block text-sm font-medium text-ink-700" htmlFor="password">
           {t('password')}
         </label>

@@ -9,10 +9,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from '../i18n/I18nProvider';
 import { useAuth } from '../context/AuthContext';
+import type { AuthStackParamList } from '../navigation/RootNavigator';
 
-export function LoginScreen() {
+type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+
+export function LoginScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { login, error } = useAuth();
   const [email, setEmail] = useState('');
@@ -69,6 +73,10 @@ export function LoginScreen() {
             <Text style={styles.buttonText}>{t('auth.submit')}</Text>
           )}
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.linkButton} onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={styles.linkText}>{t('auth.forgotPassword')}</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -97,4 +105,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  linkButton: { marginTop: 16, alignItems: 'center' },
+  linkText: { color: '#2563eb', fontSize: 14 },
 });

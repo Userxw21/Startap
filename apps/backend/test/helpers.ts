@@ -10,7 +10,7 @@ import request from 'supertest';
 export async function onboardCourierViaInvite(
   app: INestApplication,
   adminToken: string,
-  params: { email: string; fullName: string; password: string; vehicleType: string; plateNumber?: string },
+  params: { email: string; fullName: string; password: string; vehicleType: string; plateNumber?: string; phone?: string },
 ): Promise<{ courierId: string; accessToken: string }> {
   const invite = await request(app.getHttpServer())
     .post('/api/v1/invites')
@@ -26,7 +26,10 @@ export async function onboardCourierViaInvite(
 
   const accepted = await request(app.getHttpServer())
     .post('/api/v1/invites/accept')
-    .send({ token: invite.body.token, password: params.password })
+    // Courier invites require a phone now (SMS-based forgot-password) —
+    // a fixed default here is fine for tests that don't care about the
+    // exact number, matching how other helpers use fixed test fixtures.
+    .send({ token: invite.body.token, password: params.password, phone: params.phone ?? '998901234567' })
     .expect(201);
   const accessToken = accepted.body.accessToken;
 

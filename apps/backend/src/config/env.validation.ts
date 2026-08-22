@@ -63,6 +63,19 @@ class EnvironmentVariables {
 
   @IsIn(['uz', 'ru', 'en'])
   DEFAULT_LOCALE: string;
+
+  /** Optional — see sms.service.ts: unset means forgot-password codes are logged, not texted. */
+  @IsOptional()
+  @IsString()
+  ESKIZ_EMAIL?: string;
+
+  @IsOptional()
+  @IsString()
+  ESKIZ_PASSWORD?: string;
+
+  @IsOptional()
+  @IsString()
+  ESKIZ_SENDER_NICKNAME?: string;
 }
 
 /**

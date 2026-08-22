@@ -104,6 +104,8 @@
   "acceptInvite": {
     "title": "Taklifni qabul qilish",
     "joining": "Siz {company} kompaniyasiga {role} sifatida qo'shilyapsiz",
+    "phone": "Telefon raqami",
+    "phoneHint": "Format: 998901234567 (parolni unutganda SMS shu raqamga yuboriladi)",
     "password": "Parol",
     "confirmPassword": "Parolni tasdiqlang",
     "submit": "Hisobni yaratish",
@@ -112,6 +114,7 @@
     "invalidMessage": "Bu taklif havolasi yaroqsiz, muddati o'tgan yoki allaqachon ishlatilgan.",
     "errorTooShort": "Parol kamida 12 ta belgidan iborat bo'lishi kerak",
     "errorMismatch": "Parollar mos kelmadi",
+    "errorInvalidPhone": "Telefon raqami noto'g'ri formatda (masalan: 998901234567)",
     "errorFailed": "Xatolik yuz berdi. Havola muddati o'tgan yoki allaqachon ishlatilgan bo'lishi mumkin."
   },
   "status": {

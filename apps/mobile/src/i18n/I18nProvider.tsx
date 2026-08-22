@@ -10,7 +10,7 @@ function detectDeviceLocale(): Locale {
 interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (path: string) => string;
+  t: (path: string, vars?: Record<string, string>) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -26,6 +26,12 @@ function resolve(dict: Record<string, unknown>, path: string): string {
   return typeof value === 'string' ? value : path;
 }
 
+/** "{phone}" -> vars.phone — same {placeholder} syntax the dashboard's next-intl messages use, for consistency. */
+function interpolate(text: string, vars?: Record<string, string>): string {
+  if (!vars) return text;
+  return text.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match);
+}
+
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocale] = useState<Locale>(detectDeviceLocale);
 
@@ -33,7 +39,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     () => ({
       locale,
       setLocale,
-      t: (path: string) => resolve(translations[locale], path),
+      t: (path: string, vars?: Record<string, string>) => interpolate(resolve(translations[locale], path), vars),
     }),
     [locale],
   );

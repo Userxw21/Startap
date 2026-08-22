@@ -146,8 +146,19 @@ export class InvitesService {
     return { email: invite.email, fullName: invite.fullName, role: invite.role, companyName: invite.company.name, valid };
   }
 
-  /** Public — creates the account and logs the new user in immediately. */
-  async accept(token: string, password: string): Promise<TokenPair & { user: Omit<User, 'passwordHash'> }> {
+  /**
+   * Public — creates the account and logs the new user in immediately.
+   * `phone` is required for courier invites specifically (not dispatchers):
+   * it's how the mobile app's SMS-based forgot-password flow identifies an
+   * account, so a courier who never provides one could never recover a lost
+   * password. Validated here rather than in the DTO because the DTO alone
+   * doesn't know the invite's role yet.
+   */
+  async accept(
+    token: string,
+    password: string,
+    phone?: string,
+  ): Promise<TokenPair & { user: Omit<User, 'passwordHash'> }> {
     const invite = await this.invites.findOne({ where: { tokenHash: this.hashToken(token) } });
     if (!invite) {
       throw new NotFoundException('Invite not found');
@@ -160,6 +171,9 @@ export class InvitesService {
     }
     if (invite.expiresAt < new Date()) {
       throw new ConflictException('This invite has expired');
+    }
+    if (invite.role === UserRole.COURIER && !phone) {
+      throw new BadRequestException('Phone number is required for courier accounts');
     }
 
     const existingUser = await this.users.findOne({ where: { email: invite.email } });
@@ -178,6 +192,8 @@ export class InvitesService {
           email: invite.email,
           fullName: invite.fullName,
           password,
+          // Non-null: validated above (courier invites require it).
+          phone: phone as string,
           vehicleType: invite.vehicleType as VehicleType,
           vehicleModel: invite.vehicleModel ?? undefined,
           plateNumber: invite.plateNumber ?? undefined,

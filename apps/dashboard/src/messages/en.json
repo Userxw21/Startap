@@ -104,6 +104,8 @@
   "acceptInvite": {
     "title": "Accept invite",
     "joining": "You're joining {company} as a {role}",
+    "phone": "Phone number",
+    "phoneHint": "Format: 998901234567 (this is where a password-reset SMS would go)",
     "password": "Password",
     "confirmPassword": "Confirm password",
     "submit": "Create account",
@@ -112,6 +114,7 @@
     "invalidMessage": "This invite link is invalid, expired, or already used.",
     "errorTooShort": "Password must be at least 12 characters",
     "errorMismatch": "Passwords don't match",
+    "errorInvalidPhone": "Invalid phone number format (e.g. 998901234567)",
     "errorFailed": "Something went wrong. The link may have expired or already been used."
   },
   "status": {

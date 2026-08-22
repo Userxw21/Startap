@@ -376,17 +376,23 @@ Prerequisites), so verification took two tracks:
   guide), which broke resolution of `@react-navigation/core` — a transitive
   dependency of `@react-navigation/native` living in pnpm's nested
   node_modules. Removed; documented in `metro.config.js` itself.
-- **`pnpm --filter @courier/mobile run web` (`expo start --web`), actually
-  clicked through in a real browser** — added `react-native-web`/`react-dom`
-  for this specifically (not a real target platform for this app; couriers
-  use Android/iOS, this was purely to get a click-testable surface without
-  a device). Full login → home → logout → session-persists-across-reload
-  cycle confirmed working against the real backend. This caught a second
-  real bug: `expo-secure-store` has no working web implementation (throws
-  `getValueWithKeyAsync is not a function`, not a graceful no-op) — fixed
-  by branching `src/lib/auth-storage.ts` on `Platform.OS === 'web'` to use
-  `localStorage` there instead (fine for a verification-only path; not
-  relevant to the real Android/iOS targets, which still use SecureStore).
+- **`expo start --web`, actually clicked through in a real browser** —
+  temporarily added `react-native-web`/`react-dom` for this (not a real
+  target platform; couriers use Android/iOS, this was purely to get a
+  click-testable surface without a device). Full login → home → logout →
+  session-persists-across-reload cycle confirmed working against the real
+  backend. Caught a real bug this way: `expo-secure-store` has no working
+  web implementation (throws `getValueWithKeyAsync is not a function`, not
+  a graceful no-op) — fixed by branching `src/lib/auth-storage.ts` on
+  `Platform.OS === 'web'` to use `localStorage` there instead (the real
+  Android/iOS targets are unaffected, they still use SecureStore).
+  **`react-native-web`/`react-dom` were removed again afterward** — they
+  pulled in React 19, conflicting with the dashboard's React 18 in this
+  pnpm workspace and breaking `next build` with a cryptic
+  `ReactCurrentDispatcher` error. The `Platform.OS === 'web'` branch in
+  `auth-storage.ts` stays (harmless, unreachable without react-native-web),
+  documented as a lesson: verify with a throwaway platform, then remove it
+  before it becomes a standing cross-package dependency conflict.
 
 This is real click-through verification of the auth flow — closer to what
 was done for the dashboard than a typecheck-only pass — but still doesn't
@@ -413,6 +419,52 @@ For a physical device or the Android emulator, `localhost` in
 `EXPO_PUBLIC_BACKEND_API_URL` won't reach your dev machine — see the
 comment in `.env.example` for the fix (LAN IP, or `10.0.2.2` for the
 Android emulator specifically).
+
+## Forgot password (SMS) — courier-only
+
+Couriers can reset a forgotten password from the mobile app via an SMS
+code: `POST /auth/forgot-password` (phone) → SMS with a 6-digit code →
+`POST /auth/reset-password` (phone, code, new password). Not offered on the
+dashboard — company admins/dispatchers don't provide a phone number and
+weren't in scope for this.
+
+**Why a phone is now required for courier accounts**: it didn't exist as a
+collected field before this. `AcceptInviteDto.phone` is required (validated
+as `998XXXXXXXXX`) specifically when accepting a **courier** invite —
+dispatcher invites still don't need one. The dashboard's accept-invite page
+only shows the phone field when the invite's role is COURIER.
+
+**SMS provider: Eskiz.uz**, chosen after comparing options for Uzbekistan —
+~95 UZS/SMS, self-serve signup with local payment methods (Payme/Click/
+Uzum), versus international providers that don't reliably or cheaply reach
+Uzbek numbers. **Signup is not done by this code** — create an account at
+eskiz.uz yourself (this assistant can't create accounts or enter payment
+details), then set `ESKIZ_EMAIL`/`ESKIZ_PASSWORD` in `apps/backend/.env`.
+Left unset, `apps/backend/src/sms/sms.service.ts`'s `ConsoleSmsSender`
+logs the code to the server console instead of texting it — good enough to
+develop and test the whole flow (confirmed by hand: request code, read it
+from the log, reset the password, log in with the new one) without a real
+SMS account.
+
+**Security notes**:
+- Codes are 6 digits, Redis-backed with a 5-minute TTL, hashed before
+  storage (`OtpService`) — same "don't store the literal secret" reasoning
+  as refresh tokens. A 60-second per-phone cooldown between SMS sends and
+  a 3-requests/15-minutes-per-IP throttle on `/auth/forgot-password` guard
+  against SMS-cost abuse (each successful request costs real money).
+- `/auth/forgot-password` and `/auth/reset-password` return the same
+  response shape regardless of whether the phone matches an account (or,
+  for reset, whether the code is right) — same "don't reveal whether an
+  account exists" posture `login()` already has, just for phone numbers.
+- A successful reset revokes every existing refresh token for that
+  account, forcing re-login on every device — the same posture already
+  taken for detected refresh-token theft in `AuthService.refresh()`.
+- **Found and fixed a real bug via manual testing**: `OtpService.verify()`
+  originally deleted the stored code on *any* verification attempt,
+  including a wrong one — meaning a single mistyped digit silently
+  invalidated the correct code, forcing a whole new SMS. Fixed to only
+  delete on an actual match; brute-force protection is `/auth/reset-
+  password`'s own throttle (5 attempts/15min/IP), not code-deletion.
 
 ## Running tests
 

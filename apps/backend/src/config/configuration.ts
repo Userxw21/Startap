@@ -40,4 +40,12 @@ export default () => ({
   i18n: {
     defaultLocale: process.env.DEFAULT_LOCALE ?? 'uz',
   },
+  sms: {
+    // All optional — see sms.service.ts's ConsoleSmsSender: unset means
+    // forgot-password codes get logged instead of texted, not a boot
+    // failure. Sign up at eskiz.uz to get real values.
+    eskizEmail: process.env.ESKIZ_EMAIL,
+    eskizPassword: process.env.ESKIZ_PASSWORD,
+    eskizNickname: process.env.ESKIZ_SENDER_NICKNAME,
+  },
 });

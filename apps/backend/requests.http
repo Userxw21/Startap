@@ -58,14 +58,18 @@ GET {{baseUrl}}/invites/preview/{{inviteToken}}
 
 ### 6. Accept the invite — this is where the courier actually sets their
 ### password, and creates the account (User + Vehicle + Courier). Returns
-### login tokens directly, no separate login call needed.
+### login tokens directly, no separate login call needed. "phone" is
+### required for COURIER invites specifically (998 + 9 digits, no "+") —
+### it's how the mobile app's SMS-based forgot-password flow identifies an
+### account. Not required when accepting a DISPATCHER invite.
 # @name acceptInvite
 POST {{baseUrl}}/invites/accept
 Content-Type: application/json
 
 {
   "token": "{{inviteToken}}",
-  "password": "a-strong-password-123"
+  "password": "a-strong-password-123",
+  "phone": "998901234567"
 }
 
 @courierToken = {{acceptInvite.response.body.accessToken}}

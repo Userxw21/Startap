@@ -84,6 +84,26 @@ export async function login(email: string, password: string): Promise<LoginRespo
   return data;
 }
 
+/**
+ * Always resolves — the backend deliberately returns 204 whether or not the
+ * phone matches an account (see AuthService.forgotPassword's "don't reveal
+ * whether the account exists" reasoning), so there's nothing meaningful to
+ * branch on here either. skipAuth: true because this runs before the user
+ * has any session — there's no token to attach yet.
+ */
+export async function forgotPassword(phone: string): Promise<void> {
+  await apiFetch<void>('/auth/forgot-password', { method: 'POST', body: { phone }, skipAuth: true });
+}
+
+/** Throws ApiError(401) for a wrong/expired code — same message either way, see backend's resetPassword(). */
+export async function resetPassword(phone: string, code: string, newPassword: string): Promise<void> {
+  await apiFetch<void>('/auth/reset-password', {
+    method: 'POST',
+    body: { phone, code, newPassword },
+    skipAuth: true,
+  });
+}
+
 export async function logout(): Promise<void> {
   // /auth/logout requires a valid access token (it's not @Public()), so this
   // has to run before clearTokens() — otherwise there'd be nothing to send.

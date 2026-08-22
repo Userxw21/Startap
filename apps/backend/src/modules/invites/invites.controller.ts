@@ -58,7 +58,7 @@ export class InvitesController {
   @HttpCode(HttpStatus.CREATED)
   @Post('accept')
   accept(@Body() dto: AcceptInviteDto) {
-    return this.invitesService.accept(dto.token, dto.password);
+    return this.invitesService.accept(dto.token, dto.password, dto.phone);
   }
 
   private assertHasCompany(user: AuthenticatedUser): void {
